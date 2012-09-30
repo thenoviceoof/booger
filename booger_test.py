@@ -9,11 +9,15 @@
 ################################################################################
 
 from unittest import TestCase
+from nose.tools import raises
 
 ################################################################################
 # Nosetest parser
 
 from booger import NOSE_DIV_WIDTH, NosetestsParser
+
+########################################
+# short tests
 
 def short_output_end_test():
     '''
@@ -64,3 +68,18 @@ def short_output_error_test():
     msg = 'msg ... ERROR'
     test, status, end = parser.parse_short_output(msg)
     assert status == 'error'
+
+@raises()
+def short_output_dots_test():
+    '''
+    A regression test, to make sure the ... (ok|ERROR|FAIL) ellipse
+    doesn't match strange things
+    '''
+    raise NotImplemented
+
+########################################
+# 'long' tests (traceback, stdout, etc)
+
+
+################################################################################
+# we can't really test the curses stuff, so we don't try
