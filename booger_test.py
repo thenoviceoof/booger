@@ -15,35 +15,52 @@ from unittest import TestCase
 
 from booger import NOSE_DIV_WIDTH, NosetestsParser
 
-class NosetestsParserTest(TestCase):
-    def setUp(self):
-        self.parser = NosetestsParser()
+def short_output_end_test():
+    '''
+    Make sure we recognise the end of the short output
+    '''
+    parser = NosetestsParser()
 
-    def short_output_end_test(self):
-        '''
-        Make sure we recognise the end of the short output
-        '''
-        inp = '=' * 70
-        test, status, end = self.parser.parse_short_output(inp)
-        assert end == True
-    def short_output_ok_test(self):
-        '''
-        Recognize `msg ... ok` messages
-        '''
-        msg = 'msg ... ok'
-        test, status, end = self.parser.parse_short_output(msg)
-        assert status == 'ok'
-    def short_output_fail_test(self):
-        '''
-        Recognize `msg ... FAIL` messages
-        '''
-        msg = 'msg ... FAIL'
-        test, status, end = self.parser.parse_short_output(msg)
-        assert status == 'fail'
-    def short_output_error_test(self):
-        '''
-        Recognize `msg ... ERROR` messages
-        '''
-        msg = 'msg ... ERROR'
-        test, status, end = self.parser.parse_short_output(msg)
-        assert status == 'error'
+    inp = '=' * 70
+    test, status, end = parser.parse_short_output(inp)
+    assert end == True
+
+def short_output_short_test():
+    '''
+    Recognize -v0 test output
+    '''
+    parser = NosetestsParser()
+
+    inp = 'EE...F'
+    parser.parse_short_output(inp)
+    assert parser.counts['ok'] == 3
+    assert parser.counts['fail'] == 1
+    assert parser.counts['error'] == 2
+
+def short_output_ok_test():
+    '''
+    Recognize `msg ... ok` messages
+    '''
+    parser = NosetestsParser()
+
+    msg = 'msg ... ok'
+    test, status, end = parser.parse_short_output(msg)
+    assert status == 'ok'
+def short_output_fail_test():
+    '''
+    Recognize `msg ... FAIL` messages
+    '''
+    parser = NosetestsParser()
+
+    msg = 'msg ... FAIL'
+    test, status, end = parser.parse_short_output(msg)
+    assert status == 'fail'
+def short_output_error_test():
+    '''
+    Recognize `msg ... ERROR` messages
+    '''
+    parser = NosetestsParser()
+
+    msg = 'msg ... ERROR'
+    test, status, end = parser.parse_short_output(msg)
+    assert status == 'error'
