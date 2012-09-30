@@ -24,26 +24,26 @@ class NosetestsParserTest(TestCase):
         Make sure we recognise the end of the short output
         '''
         inp = '=' * 70
-        out, end = self.parser.parse_short_output(inp)
-        assert end == False
+        test, status, end = self.parser.parse_short_output(inp)
+        assert end == True
     def short_output_ok_test(self):
         '''
         Recognize `msg ... ok` messages
         '''
         msg = 'msg ... ok'
-        out, end = self.parser.parse_short_output(msg)
-        assert out == 'ok'
+        test, status, end = self.parser.parse_short_output(msg)
+        assert status == 'ok'
     def short_output_fail_test(self):
         '''
         Recognize `msg ... FAIL` messages
         '''
         msg = 'msg ... FAIL'
-        out, end = self.parser.parse_short_output(msg)
-        assert out == 'fail'
+        test, status, end = self.parser.parse_short_output(msg)
+        assert status == 'fail'
     def short_output_error_test(self):
         '''
         Recognize `msg ... ERROR` messages
         '''
         msg = 'msg ... ERROR'
-        out, end = self.parser.parse_short_output(msg)
-        assert out == 'error'
+        test, status, end = self.parser.parse_short_output(msg)
+        assert status == 'error'
