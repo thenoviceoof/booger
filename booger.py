@@ -24,19 +24,26 @@ NOSE_DIV_WIDTH = 70
 class NosetestsParser(object):
     short_output = True
 
-    def parse_short_output(s):
+    def parse_short_output(self, s):
         
+        return s, False
+
+    def parse_long_output(self, s):
         return ''
 
-    def parse_input(s):
+    def parse_input(self, s):
         '''
         See if the input s contains
         - Short test output (.EF / other)
         - Long output (traceback / stdout / logging)
         '''
-        if short_output:
-            output = self.parse_short_output(s)
-            print output
+        if self.short_output:
+            output, end = self.parse_short_output(s)
+            print output,
+            if end:
+                self.short_output = False
+        else:
+            output = self.parse_long_output(s)
         return ''
 
 # this is a test function, so we can run `nosetests booger.py` to get output
@@ -67,12 +74,16 @@ class CursesManager(object):
 
 if __name__ == "__main__":
     parser = NosetestsParser()
-    print ['nosetests'] + sys.argv[1:]
-    p = subprocess.Popen(['nosetests'] + sys.argv[1:],
+    args = ['nosetests'] + sys.argv[1:]
+    if '-v' not in args:
+        args.append('-v')
+    print args
+    p = subprocess.Popen(args,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     for line in p.stdout:
-        print line,
+        parser.parse_input(line)
+        # print line,
     # with CursesManager() as cur:
     #     while 1:
     #         cur.getch()
