@@ -22,8 +22,8 @@ import subprocess
 NOSE_DIV_WIDTH = 70
 SHORT_MAPPING = {
     '.': 'ok',
-    'E': 'ERROR',
-    'F': 'FAIL'
+    'E': 'error',
+    'F': 'fail'
 }
 
 class NosetestsParser(object):
@@ -39,7 +39,7 @@ class NosetestsParser(object):
         Try to parse apart the line as a -v test output
         Return test, status
         '''
-        m = re.match('^(.*) ... (ok|FAIL|ERROR)$', s)
+        m = re.match(r'^(.*) \.\.\. (ok|FAIL|ERROR)$', s)
         if m is None:
             return None, None
         msg = m.group(1)
@@ -55,7 +55,6 @@ class NosetestsParser(object):
         if m is None:
             return
         ss = m.group(1)
-        ss = ss.split('')
         for s in ss:
             self.counts[SHORT_MAPPING[s]] += 1
     def parse_short_output(self, s):
@@ -69,10 +68,10 @@ class NosetestsParser(object):
         test, status = self.parse_short_long_output(s)
         if status:
             return test, status, False
+        print test, status
         # this merely updates the counts
         self.parse_short_short_output(s)
-        if status:
-            return None, None, False
+        return None, None, False
 
     def parse_long_output(self, s):
         '''
