@@ -6,9 +6,9 @@
 # and you think this stuff is worth it, you can buy me a beer in
 # return
 # Nathan Hwang <thenoviceoof>
-# ----------------------------------------------------------------------------
 ################################################################################
 
+import re
 import sys
 import curses
 import subprocess
@@ -25,10 +25,21 @@ class NosetestsParser(object):
     short_output = True
 
     def parse_short_output(self, s):
-        
-        return s, False
+        '''
+        Takes a line of output
+        Returns (status (ok, fail, error), end)
+        '''
+        if re.match('=' * NOSE_DIV_WIDTH, s):
+            return None, True
+        m = re.match('^.* ... (ok|FAIL|ERROR)$', s)
+        status = m.group(1).lower()
+        return status, False
 
     def parse_long_output(self, s):
+        '''
+        Take a line of output
+        Do something else
+        '''
         return ''
 
     def parse_input(self, s):
@@ -38,8 +49,8 @@ class NosetestsParser(object):
         - Long output (traceback / stdout / logging)
         '''
         if self.short_output:
-            output, end = self.parse_short_output(s)
-            print output,
+            status, end = self.parse_short_output(s)
+            print s,
             if end:
                 self.short_output = False
         else:
