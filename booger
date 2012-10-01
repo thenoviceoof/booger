@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python booger.py $1 --with-booger
