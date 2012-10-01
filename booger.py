@@ -11,6 +11,7 @@
 import re
 import sys
 import nose
+import Queue
 import curses
 import threading
 import exceptions
@@ -20,76 +21,75 @@ from nose.plugins import Plugin
 ################################################################################
 # windowing stuff
 
-def curses_main(scr):
+def curses_main(scr, test_queue):
+    '''
+    The curses loop
+    Poll for input, new tests
+    '''
+    tests = {
+        'ok': [],
+        'fail': [],
+        'error': [],
+    }
+
+    curses.use_default_colors()
     try:
         # wait for a character for only 0.1s
         curses.halfdelay(1)
         while 1:
+            # handle input
             c = scr.getch()
             if c == ord('q'):
                 return
+            # handle any new tests
+            try:
+                t = test_queue.get(block=False)
+                tests[t[0]].append(t[1])
+            except Queue.Empty:
+                pass
+            # refresh the page
+            scr.addstr(0,0, "thing")
+            scr.addstr(1,0, str(tests))
             scr.refresh()
     except KeyboardInterrupt:
         return
 
-class CursesInterface(threading.Thread):
-    def __init__(self):
-        super(CursesInterface, self).__init__()
-
-        # self.curses_scr = curses.initscr()
-        # curses.noecho()
-        # curses.cbreak()
-        # self.curses_scr.keypad(1)
-
-    def run(self):
-        curses.wrapper(curses_main)
-
-    # def __del__(self):
-    #     self.curses_scr.keypad(0)
-    #     curses.nocbreak()
-    #     curses.echo()
-    #     curses.endwin()
+def curses_run(test_queue):
+    '''
+    Little wrapper to facilitate thread running
+    '''
+    curses.wrapper(curses_main, test_queue)
 
 ################################################################################
 # nose plugin
 
 class BoogerPlugin(Plugin):
     def __init__(self, *args, **kwargs):
-        self.tests = {
-            'ok': [],
-            'fail': [],
-            'error': []
-        }
-        self.win = CursesInterface()
         super(BoogerPlugin, self).__init__(*args, **kwargs)
-        self.win.start()
+
+        self.test_queue = Queue.Queue()
+        self.curses = threading.Thread(target=curses_run,
+                                       args=(self.test_queue,))
+        self.curses.start()
 
     ############################################################################
     # utils
 
-    def post_test(self):
-        pass
-        # self.win.update_status([])
-
     ############################################################################
     # test outcome handler
     def addSuccess(self, test):
-        self.tests['ok'].append(test)
-        self.post_test()
+        self.test_queue.put(('ok', test))
     def addFailure(self, test, err):
-        self.tests['fail'].append(test)
-        self.post_test()
+        self.test_queue.put(('fail', test))
     def addError(self, test, err):
-        self.tests['error'].append(test)
-        self.post_test()
+        self.test_queue.put(('error', test))
 
+    ############################################################################
+    # handle other boilerplate
     def finalize(self, result):
-        self.win.join()
-        del self.win
+        self.curses.join()
     def report(self, stream):
         pass
-        # return False
-
     def setOutputStream(self, stream):
         self.stream = stream
         class Dummy:
@@ -101,6 +101,7 @@ class BoogerPlugin(Plugin):
                 pass
         return Dummy()
 
+# just a test case
 def test_test():
     assert False
 
@@ -108,6 +109,4 @@ def test_test():
 # main
 
 if __name__ == "__main__":
-    # nose.main(plugins=[BoogerPlugin()])
-    c = CursesInterface()
-    c.start()
+    nose.main(plugins=[BoogerPlugin()])
