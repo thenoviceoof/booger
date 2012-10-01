@@ -10,6 +10,7 @@
 
 import re
 import sys
+import nose
 import curses
 
 from nose.plugins import Plugin
@@ -18,7 +19,16 @@ from nose.plugins import Plugin
 # nose plugin
 
 class BoogerPlugin(Plugin):
-    pass
+    def addSuccess(self, test):
+        print test
+    def addError(self, test, err):
+        print test, err
+    def addFailure(self, test, err):
+        print test, err
+    def finalize(self, result):
+        return None
+    def report(self, stream):
+        return True
 
 ################################################################################
 # windowing stuff
@@ -43,7 +53,7 @@ class CursesManager(object):
 # main
 
 if __name__ == "__main__":
-    pass
+    nose.main(addplugins=[BoogerPlugin])
     # with CursesManager() as cur:
     #     while 1:
     #         cur.getch()
