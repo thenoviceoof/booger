@@ -69,13 +69,16 @@ def short_output_error_test():
     test, status, end = parser.parse_short_output(msg)
     assert status == 'error'
 
-@raises()
+@raises(ValueError)
 def short_output_dots_test():
     '''
     A regression test, to make sure the ... (ok|ERROR|FAIL) ellipse
     doesn't match strange things
     '''
-    raise NotImplemented
+    parser = NosetestsParser()
+
+    msg = 'msg XXX ERROR'
+    test, status, end = parser.parse_short_output(msg)
 
 ########################################
 # 'long' tests (traceback, stdout, etc)

@@ -51,9 +51,12 @@ class NosetestsParser(object):
         Try to parse apart the line as a -v0 output (not an actual option)
         Return None
         '''
-        m = re.match('^([.EF]+)$', s)
+        m = re.match('^$', s)
         if m is None:
             return
+        m = re.match('^([.EF]+)$', s)
+        if m is None:
+            raise ValueError('Format does not fit')
         ss = m.group(1)
         for s in ss:
             self.counts[SHORT_MAPPING[s]] += 1
@@ -62,13 +65,13 @@ class NosetestsParser(object):
         Takes a line of output
         Returns (test, status (ok, fail, error), end)
         '''
-        if re.match('=' * NOSE_DIV_WIDTH, s):
+        # match the first long tets
+        if re.match('(={{{num}}}|-{{{num}}})'.format(num=NOSE_DIV_WIDTH), s):
             return None, None, True
         # get the test and it's status
         test, status = self.parse_short_long_output(s)
         if status:
             return test, status, False
-        print test, status
         # this merely updates the counts
         self.parse_short_short_output(s)
         return None, None, False
@@ -78,7 +81,7 @@ class NosetestsParser(object):
         Take a line of output
         Do something else
         '''
-        return ''
+        return s
 
     def parse_input(self, s):
         '''
@@ -92,6 +95,7 @@ class NosetestsParser(object):
             if end:
                 self.short_output = False
         else:
+            print s,
             output = self.parse_long_output(s)
         return ''
 
@@ -122,7 +126,7 @@ if __name__ == "__main__":
     args = ['nosetests'] + sys.argv[1:]
     if '-v' not in args:
         args.append('-v')
-    print args
+    print "[ARGS] " + str(args)
     p = subprocess.Popen(args,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
