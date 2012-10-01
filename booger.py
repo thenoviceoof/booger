@@ -11,93 +11,14 @@
 import re
 import sys
 import curses
-import subprocess
+
+from nose.plugins import Plugin
 
 ################################################################################
-# utils
+# nose plugin
 
-################################################################################
-# nosetests output parser
-
-NOSE_DIV_WIDTH = 70
-SHORT_MAPPING = {
-    '.': 'ok',
-    'E': 'error',
-    'F': 'fail'
-}
-
-class NosetestsParser(object):
-    short_output = True
-
-    counts = {
-        'ok': 0,
-        'fail': 0,
-        'error': 0
-    }
-    def parse_short_long_output(self, s):
-        '''
-        Try to parse apart the line as a -v test output
-        Return test, status
-        '''
-        m = re.match(r'^(.*) \.\.\. (ok|FAIL|ERROR)$', s)
-        if m is None:
-            return None, None
-        msg = m.group(1)
-        status = m.group(2).lower()
-        self.counts[status] += 1
-        return msg, status
-    def parse_short_short_output(self, s):
-        '''
-        Try to parse apart the line as a -v0 output (not an actual option)
-        Return None
-        '''
-        m = re.match('^$', s)
-        if m is None:
-            return
-        m = re.match('^([.EF]+)$', s)
-        if m is None:
-            raise ValueError('Format does not fit')
-        ss = m.group(1)
-        for s in ss:
-            self.counts[SHORT_MAPPING[s]] += 1
-    def parse_short_output(self, s):
-        '''
-        Takes a line of output
-        Returns (test, status (ok, fail, error), end)
-        '''
-        # match the first long tets
-        if re.match('(={{{num}}}|-{{{num}}})'.format(num=NOSE_DIV_WIDTH), s):
-            return None, None, True
-        # get the test and it's status
-        test, status = self.parse_short_long_output(s)
-        if status:
-            return test, status, False
-        # this merely updates the counts
-        self.parse_short_short_output(s)
-        return None, None, False
-
-    def parse_long_output(self, s):
-        '''
-        Take a line of output
-        Do something else
-        '''
-        return s
-
-    def parse_input(self, s):
-        '''
-        See if the input s contains
-        - Short test output (.EF / other)
-        - Long output (traceback / stdout / logging)
-        '''
-        if self.short_output:
-            test, status, end = self.parse_short_output(s)
-            print s,
-            if end:
-                self.short_output = False
-        else:
-            print s,
-            output = self.parse_long_output(s)
-        return ''
+class BoogerPlugin(Plugin):
+    pass
 
 ################################################################################
 # windowing stuff
@@ -122,17 +43,7 @@ class CursesManager(object):
 # main
 
 if __name__ == "__main__":
-    parser = NosetestsParser()
-    args = ['nosetests'] + sys.argv[1:]
-    if '-v' not in args:
-        args.append('-v')
-    print "[ARGS] " + str(args)
-    p = subprocess.Popen(args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    for line in p.stdout:
-        parser.parse_input(line)
-        # print line,
+    pass
     # with CursesManager() as cur:
     #     while 1:
     #         cur.getch()
