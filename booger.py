@@ -12,8 +12,43 @@ import re
 import sys
 import nose
 import curses
+import threading
+import exceptions
 
 from nose.plugins import Plugin
+
+################################################################################
+# windowing stuff
+
+class CursesInterface(object):
+    def __init__(self):
+        self.curses_scr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.curses_scr.keypad(1)
+    def run_main(self):
+        self.thread = threading.Thread(target=self.main)
+        self.thread.run()
+    def main(self):
+        try:
+            # wait for a character for only 0.1s
+            curses.halfdelay(1)
+            while 1:
+                c = self.curses_scr.getch()
+                if c == 'q':
+                    return
+                self.curses_scr.refresh()
+        except KeyboardInterrupt:
+            return
+    def update_status(self, lst):
+        self.curses_scr.addstr(0,0, "thing")
+    def join(self):
+        self.thread.join()
+    def __del__(self):
+        self.curses_scr.keypad(0)
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
 
 ################################################################################
 # nose plugin
@@ -25,13 +60,15 @@ class BoogerPlugin(Plugin):
             'fail': [],
             'error': []
         }
+        self.win = CursesInterface()
         super(BoogerPlugin, self).__init__(*args, **kwargs)
+        self.win.run_main()
 
     ############################################################################
     # utils
 
     def post_test(self):
-        print '\r' + str([(n,len(t)) for n,t in self.tests.iteritems()]),
+        self.win.update_status([])
 
     ############################################################################
     # test outcome handler
@@ -46,13 +83,13 @@ class BoogerPlugin(Plugin):
         self.post_test()
 
     def finalize(self, result):
-        return None
+        self.win.join()
     def report(self, stream):
-        return False
+        pass
+        # return False
 
     def setOutputStream(self, stream):
         self.stream = stream
-        stream.write("FUCKKKKKKKKKKKk")
         class Dummy:
             def write(self, *arg):
                 pass
@@ -63,41 +100,14 @@ class BoogerPlugin(Plugin):
         return Dummy()
 
 def test_test():
-    import time
-    time.sleep(2)
     assert False
-
-def test_test2():
-    import time
-    time.sleep(2)
-    assert False
-
-################################################################################
-# windowing stuff
-
-class CursesManager(object):
-    def __enter__(self):
-        self.curses_scr = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        self.curses_scr.keypad(1)
-        return self.curses_scr
-    def __exit__(self, type, value, traceback):
-        self.curses_scr.keypad(0)
-        curses.nocbreak()
-        curses.echo()
-        curses.endwin()
-        if type is exceptions.KeyboardInterrupt:
-            return True
-        print type, value, traceback
 
 ################################################################################
 # main
 
 if __name__ == "__main__":
-    nose.main(plugins=[BoogerPlugin()])
-
-    # with CursesManager() as cur:
-    #     while 1:
-    #         cur.getch()
-    #         cur.refresh()
+    # nose.main(plugins=[BoogerPlugin()])
+    c = CursesInterface()
+    # c.run_main()
+    c.main()
+    # c.join()
