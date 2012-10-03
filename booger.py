@@ -33,29 +33,41 @@ def curses_main(scr, test_queue):
     }
 
     curses.use_default_colors()
+    curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    # wait for a character for only 0.1s
+    curses.halfdelay(1)
 
-    status_bar = curses.newwin(1, 50, 0,0)
-    status_bar.addstr(0,0, 'Running tests...', curses.color_pair(1))
-    status_bar.refresh()
+    size = None
+    status_bar = None
     try:
-        # wait for a character for only 0.1s
-        curses.halfdelay(1)
         while 1:
             # handle input
+            prev_size = size
+            size = scr.getmaxyx()[1], scr.getmaxyx()[0]
             c = scr.getch()
             if c == ord('q'):
                 return
+            elif c == curses.KEY_RESIZE or size != prev_size:
+                status_bar = None
             # handle any new tests
             try:
                 t = test_queue.get(block=False)
                 tests[t[0]].append(t[1])
             except Queue.Empty:
                 pass
-            # refresh the page
-            # status_bar.add_str()
-            scr.addstr(1,0, str(len(tests['ok'])))
-            scr.refresh()
+
+            if status_bar is None:
+                status_bar = curses.newwin(1,size[0])
+                msg = 'Running tests...'
+                status_bar.bkgdset(ord(' '), curses.color_pair(1))
+                status_bar.clear()
+                status_bar.addstr(0,0, msg + ' ' * (size[0] - len(msg) - 1))
+                status_bar.refresh()
+            status_bar.refresh()
+
+            # scr.addstr(1,0, str(len(tests['ok'])))
+            # scr.refresh()
     except KeyboardInterrupt:
         return
 
