@@ -39,6 +39,7 @@ def curses_main(scr, test_queue):
     curses.halfdelay(1)
 
     size = None
+    new_tests = False
     status_bar = None
     try:
         while 1:
@@ -54,8 +55,9 @@ def curses_main(scr, test_queue):
             try:
                 t = test_queue.get(block=False)
                 tests[t[0]].append(t[1])
+                new_tests = True
             except Queue.Empty:
-                pass
+                new_tests = False
 
             if status_bar is None:
                 status_bar = curses.newwin(1,size[0])
@@ -64,7 +66,14 @@ def curses_main(scr, test_queue):
                 status_bar.clear()
                 status_bar.addstr(0,0, msg + ' ' * (size[0] - len(msg) - 1))
                 status_bar.refresh()
-            status_bar.refresh()
+            if new_tests:
+                status_bar.clear()
+                ss = ['total: {0}'.format(sum([len(t) for t in tests.values()]))]
+                ss += ['{0}: {1}'.format(x,len(tests[x]))
+                       for x in ['ok', 'error', 'fail']]
+                counts = ' | '.join(ss)
+                status_bar.addstr(0,0, counts)
+                status_bar.refresh()
 
             # scr.addstr(1,0, str(len(tests['ok'])))
             # scr.refresh()
@@ -121,6 +130,8 @@ class BoogerPlugin(Plugin):
 # just a test case
 def test_test():
     assert False
+def test_test_test():
+    assert True
 
 ################################################################################
 # main
