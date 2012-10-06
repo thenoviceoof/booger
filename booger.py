@@ -126,6 +126,7 @@ def curses_main(scr, test_queue):
     status_bar = None
     test_area = None
     cur_test = None
+    prev_test = None
     try:
         while 1:
             # handle input
@@ -134,11 +135,12 @@ def curses_main(scr, test_queue):
             size = scr.getmaxyx()[1], scr.getmaxyx()[0]
             if c == ord('q'):
                 return
-            elif c == curses.KEY_DOWN:
+            elif c == curses.KEY_DOWN or c == curses.KEY_UP:
+                prev_test = cur_test
                 if cur_test is None:
                     cur_test = 0
                 else:
-                    cur_test += 1
+                    cur_test += {curses.KEY_DOWN: 1, curses.KEY_UP: -1}[c]
                     cur_test %= len(tests)
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
@@ -167,13 +169,19 @@ def curses_main(scr, test_queue):
                         win = init_test_win(test_area, size, t, i)
                         # windowing business
                         update_test_win(win, size, t, e)
-
-                        test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
                         test_wins[i] = win
-                scr.refresh()
+                test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
+            if prev_test is not None:
+                test_wins[prev_test].clear()
+                test_wins[prev_test].bkgdset(ord(' '), curses.color_pair(0))
+                update_test_win(test_wins[prev_test], size,
+                                tests[prev_test][0], tests[prev_test][1])
+                test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
             if cur_test is not None:
+                test_wins[cur_test].clear()
                 test_wins[cur_test].bkgdset(ord(' '), curses.color_pair(1))
-                test_wins[cur_test].addstr(0,0, 'X')
+                update_test_win(test_wins[cur_test], size,
+                                tests[cur_test][0], tests[cur_test][1])
                 test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
     except KeyboardInterrupt:
         return
