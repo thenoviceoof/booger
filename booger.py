@@ -48,13 +48,16 @@ def curses_main(scr, test_queue):
     try:
         while 1:
             # handle input
+            c = scr.getch()
             prev_size = size
             size = scr.getmaxyx()[1], scr.getmaxyx()[0]
-            c = scr.getch()
             if c == ord('q'):
                 return
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
+                test_area = None
+                new_tests = True
+                test_wins = {}
 
             # handle any new tests
             try:
@@ -106,15 +109,16 @@ def curses_main(scr, test_queue):
                             frame = frame.tb_next
                         # get file failed in
                         filename = frame.tb_frame.f_code.co_filename
-                        win.addstr(1, 1, filename)
+                        win.addstr(1, 1, filename[:size[0]-2])
                         # get line of source code failed on
                         f = open(filename)
                         line = f.readlines()[frame.tb_frame.f_lineno-1]
-                        win.addstr(2, 1, line[:-1])
+                        win.addstr(2, 1, line.rstrip()[:size[0]])
                         # display what and how
                         exception_name = e[1].__class__.__name__
-                        win.addstr(3, 1, '{0}: {1}'.format(exception_name,
-                                                           e[1].message))
+                        err_str = '{0}: {1}'.format(exception_name,
+                                                    e[1].message)[:size[0]-2]
+                        win.addstr(3, 1, err_str)
                         # windowing business
                         test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
                         test_wins[i] = win
