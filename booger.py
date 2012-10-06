@@ -57,6 +57,17 @@ def setup_status_bar(size, init_msg='Running tests...'):
     status_bar.refresh()
     return status_bar
 
+def update_status_bar(status_bar, test_counts, tests_done):
+    # update status bar
+    status_bar.clear()
+    ss = ['Tests Running...' if not tests_done else 'Tests Done!     ',
+          'total: {0}'.format(sum([v for v in test_counts.values()]))]
+    ss += ['{0}: {1}'.format(x,test_counts[x])
+           for x in ['ok', 'error', 'fail']]
+    counts = ' | '.join(ss)
+    status_bar.addstr(0,0, counts)
+    status_bar.refresh()
+
 def curses_main(scr, test_queue):
     '''
     The curses loop
@@ -107,7 +118,7 @@ def curses_main(scr, test_queue):
                 test_wins = {}
 
             # handle any new tests
-            if tests_done is not None:
+            if not tests_done:
                 new_tests, tests_done = get_new_tests(test_queue, test_counts,
                                                       tests)
 
@@ -116,16 +127,10 @@ def curses_main(scr, test_queue):
                 status_bar = setup_status_bar(size)
             if test_area is None:
                 test_area = curses.newpad(2000,400)
+                # initial refresh
                 test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
             if new_tests:
-                # update status bar
-                status_bar.clear()
-                ss = ['total: {0}'.format(sum([v for v in test_counts.values()]))]
-                ss += ['{0}: {1}'.format(x,test_counts[x])
-                       for x in ['ok', 'error', 'fail']]
-                counts = ' | '.join(ss)
-                status_bar.addstr(0,0, counts)
-                status_bar.refresh()
+                update_status_bar(status_bar, test_counts, tests_done)
                 # update test list
                 for i in range(len(tests)):
                     t,e = tests[i]
