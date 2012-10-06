@@ -48,6 +48,15 @@ def get_new_tests(queue, counts, test_list):
         if s is None and t is None and e is None:
             return True, True
 
+def setup_status_bar(size, init_msg='Running tests...'):
+    status_bar = curses.newwin(1,size[0])
+    status_bar.attrset(curses.A_BOLD)
+    status_bar.bkgdset(ord(' '), curses.color_pair(1))
+    status_bar.clear()
+    status_bar.addstr(0,0, init_msg + ' ' * (size[0] - len(init_msg) - 1))
+    status_bar.refresh()
+    return status_bar
+
 def curses_main(scr, test_queue):
     '''
     The curses loop
@@ -104,13 +113,7 @@ def curses_main(scr, test_queue):
 
             # do some drawing
             if status_bar is None:
-                status_bar = curses.newwin(1,size[0])
-                msg = 'Running tests...'
-                status_bar.attrset(curses.A_BOLD)
-                status_bar.bkgdset(ord(' '), curses.color_pair(1))
-                status_bar.clear()
-                status_bar.addstr(0,0, msg + ' ' * (size[0] - len(msg) - 1))
-                status_bar.refresh()
+                status_bar = setup_status_bar(size)
             if test_area is None:
                 test_area = curses.newpad(2000,400)
                 test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
