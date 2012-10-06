@@ -86,12 +86,13 @@ def curses_main(scr, test_queue):
                 # update test list
                 for i in range(len(tests)):
                     t = tests[i]
-                    if test_wins.get(t, None) is None:
-                        win = curses.newwin(5, size[0], i + 1, 0)
+                    if test_wins.get(i, None) is None:
+                        HEIGHT = 5
+                        win = curses.newwin(HEIGHT, size[0], HEIGHT*i + 1, 0)
                         win.border()
                         win.addstr(0, 5, str(t))
                         win.refresh()
-                        test_wins[t] = win
+                        test_wins[i] = win
                 scr.refresh()
     except KeyboardInterrupt:
         return
@@ -142,12 +143,6 @@ class BoogerPlugin(Plugin):
             def flush(self, *arg):
                 pass
         return Dummy()
-
-# just a test case
-def test_test():
-    assert False
-def test_test_test():
-    assert True
 
 ################################################################################
 # main
