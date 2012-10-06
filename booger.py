@@ -44,6 +44,7 @@ def curses_main(scr, test_queue):
     size = None
     new_tests = False
     status_bar = None
+    test_area = None
     try:
         while 1:
             # handle input
@@ -78,6 +79,9 @@ def curses_main(scr, test_queue):
                 status_bar.clear()
                 status_bar.addstr(0,0, msg + ' ' * (size[0] - len(msg) - 1))
                 status_bar.refresh()
+            if test_area is None:
+                test_area = curses.newpad(2000,400)
+                test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
             if new_tests:
                 # update status bar
                 status_bar.clear()
@@ -92,7 +96,7 @@ def curses_main(scr, test_queue):
                     t,e = tests[i]
                     if test_wins.get(i, None) is None:
                         HEIGHT = 5
-                        win = curses.newwin(HEIGHT, size[0], HEIGHT*i + 1, 0)
+                        win = test_area.derwin(HEIGHT, size[0], HEIGHT*i, 0)
                         win.border()
                         win.addstr(0, 5, str(t), curses.A_BOLD)
                         # display error (type, exception, traceback)
@@ -112,7 +116,7 @@ def curses_main(scr, test_queue):
                         win.addstr(3, 1, '{0}: {1}'.format(exception_name,
                                                            e[1].message))
                         # windowing business
-                        win.refresh()
+                        test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
                         test_wins[i] = win
                 scr.refresh()
     except KeyboardInterrupt:
