@@ -171,6 +171,7 @@ def curses_main(scr, test_queue):
                         update_test_win(win, size, t, e)
                         test_wins[i] = win
                 test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
+            ## !! ugh look at that repetition...
             if prev_test is not None:
                 test_wins[prev_test].clear()
                 test_wins[prev_test].bkgdset(ord(' '), curses.color_pair(0))
