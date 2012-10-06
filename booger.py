@@ -45,6 +45,7 @@ def curses_main(scr, test_queue):
     new_tests = False
     status_bar = None
     test_area = None
+    cur_test = None
     try:
         while 1:
             # handle input
@@ -53,6 +54,12 @@ def curses_main(scr, test_queue):
             size = scr.getmaxyx()[1], scr.getmaxyx()[0]
             if c == ord('q'):
                 return
+            elif c == curses.KEY_DOWN:
+                if cur_test is None:
+                    cur_test = 0
+                else:
+                    cur_test += 1
+                    cur_test %= len(tests)
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
                 test_area = None
@@ -123,6 +130,10 @@ def curses_main(scr, test_queue):
                         test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
                         test_wins[i] = win
                 scr.refresh()
+            if cur_test is not None:
+                test_wins[cur_test].bkgdset(ord(' '), curses.color_pair(1))
+                test_wins[cur_test].addstr(0,0, 'X')
+                test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
     except KeyboardInterrupt:
         return
 
