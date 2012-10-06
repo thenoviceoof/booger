@@ -21,6 +21,33 @@ from nose.plugins import Plugin
 ################################################################################
 # windowing stuff
 
+def get_new_tests(queue, counts, test_list):
+    '''
+    Retrieves tests from the queue, puts them in the right place
+    Returns tuple:
+      First, whether new tests were gotten
+      Second, whether the output is finished
+    '''
+    try:
+        s, t, e = queue.get(block=False)
+    except Queue.Empty:
+        return False, False
+    # tests done
+    if s is None and t is None and e is None:
+        return False, True
+    # keep getting until we're empty
+    while 1:
+        counts[s] += 1
+        if e is not None:
+            test_list.append((t,e))
+        try:
+            s, t, e = queue.get(block=False)
+        except Queue.Empty:
+            return True, False
+        # tests done
+        if s is None and t is None and e is None:
+            return True, True
+
 def curses_main(scr, test_queue):
     '''
     The curses loop
@@ -41,8 +68,12 @@ def curses_main(scr, test_queue):
     # wait for a character for only 0.1s
     curses.halfdelay(1)
 
+    # size of the terminal
     size = None
+
+    tests_done = False
     new_tests = False
+
     status_bar = None
     test_area = None
     cur_test = None
@@ -67,18 +98,9 @@ def curses_main(scr, test_queue):
                 test_wins = {}
 
             # handle any new tests
-            try:
-                s, t, e = test_queue.get(block=False)
-                # tests done
-                if s is None and t is None and e is None:
-                    pass
-                else:
-                    test_counts[s] += 1
-                    if e is not None:
-                        tests.append((t, e))
-                    new_tests = True
-            except Queue.Empty:
-                new_tests = False
+            if tests_done is not None:
+                new_tests, tests_done = get_new_tests(test_queue, test_counts,
+                                                      tests)
 
             # do some drawing
             if status_bar is None:
