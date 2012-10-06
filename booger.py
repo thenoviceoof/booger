@@ -91,18 +91,27 @@ def curses_main(scr, test_queue):
                 for i in range(len(tests)):
                     t,e = tests[i]
                     if test_wins.get(i, None) is None:
-                        HEIGHT = 10
+                        HEIGHT = 5
                         win = curses.newwin(HEIGHT, size[0], HEIGHT*i + 1, 0)
                         win.border()
-                        win.addstr(0, 5, str(t))
+                        win.addstr(0, 5, str(t), curses.A_BOLD)
                         # display error (type, exception, traceback)
-                        #win.addstr(1, 2, e[1].message)
-                        #win.addstr(1, 2, str(dir(e[2].tb_frame.f_code)))
-                        # win.addstr(2, 2, str(dir(e[2].tb_frame.f_code)))
-                        win.addstr(2, 2, str(e[2].tb_frame.f_code.co_filename))
-                        win.addstr(3, 2, str(e[2].tb_next.tb_frame.f_code.co_filename))
-                        win.addstr(4, 2, str(e[2].tb_next.tb_next.tb_frame.f_code.co_filename))
-                        win.addstr(5, 2, '  ' + e[1].__class__.__name__ + ': ' + e[1].message)
+                        # get last tb_frame
+                        frame = e[2]
+                        while frame.tb_next:
+                            frame = frame.tb_next
+                        # get file failed in
+                        filename = frame.tb_frame.f_code.co_filename
+                        win.addstr(1, 1, filename)
+                        # get line of source code failed on
+                        f = open(filename)
+                        line = f.readlines()[frame.tb_frame.f_lineno-1]
+                        win.addstr(2, 1, line[:-1])
+                        # display what and how
+                        exception_name = e[1].__class__.__name__
+                        win.addstr(3, 1, '{0}: {1}'.format(exception_name,
+                                                           e[1].message))
+                        # windowing business
                         win.refresh()
                         test_wins[i] = win
                 scr.refresh()
