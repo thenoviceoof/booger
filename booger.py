@@ -33,6 +33,7 @@ def curses_main(scr, test_queue):
     }
     # keep fail/error tests in a fixed list
     tests = []
+    test_wins = {}
 
     curses.use_default_colors()
     curses.curs_set(0)
@@ -53,6 +54,7 @@ def curses_main(scr, test_queue):
                 return
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
+
             # handle any new tests
             try:
                 t = test_queue.get(block=False)
@@ -63,6 +65,7 @@ def curses_main(scr, test_queue):
             except Queue.Empty:
                 new_tests = False
 
+            # do some drawing
             if status_bar is None:
                 status_bar = curses.newwin(1,size[0])
                 msg = 'Running tests...'
@@ -83,7 +86,12 @@ def curses_main(scr, test_queue):
                 # update test list
                 for i in range(len(tests)):
                     t = tests[i]
-                    scr.addstr(i+1, 0, str(t))
+                    if test_wins.get(t, None) is None:
+                        win = curses.newwin(5, size[0], i + 1, 0)
+                        win.border()
+                        win.addstr(0, 5, str(t))
+                        win.refresh()
+                        test_wins[t] = win
                 scr.refresh()
     except KeyboardInterrupt:
         return
