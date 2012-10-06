@@ -26,11 +26,13 @@ def curses_main(scr, test_queue):
     The curses loop
     Poll for input, new tests
     '''
-    tests = {
-        'ok': [],
-        'fail': [],
-        'error': [],
+    test_counts = {
+        'ok': 0,
+        'fail': 0,
+        'error': 0,
     }
+    # keep fail/error tests in a fixed list
+    tests = []
 
     curses.use_default_colors()
     curses.curs_set(0)
@@ -54,7 +56,9 @@ def curses_main(scr, test_queue):
             # handle any new tests
             try:
                 t = test_queue.get(block=False)
-                tests[t[0]].append(t[1])
+                test_counts[t[0]] += 1
+                if t[0] != 'ok':
+                    tests.append(t[1])
                 new_tests = True
             except Queue.Empty:
                 new_tests = False
@@ -62,21 +66,25 @@ def curses_main(scr, test_queue):
             if status_bar is None:
                 status_bar = curses.newwin(1,size[0])
                 msg = 'Running tests...'
+                status_bar.attrset(curses.A_BOLD)
                 status_bar.bkgdset(ord(' '), curses.color_pair(1))
                 status_bar.clear()
                 status_bar.addstr(0,0, msg + ' ' * (size[0] - len(msg) - 1))
                 status_bar.refresh()
             if new_tests:
+                # update status bar
                 status_bar.clear()
-                ss = ['total: {0}'.format(sum([len(t) for t in tests.values()]))]
-                ss += ['{0}: {1}'.format(x,len(tests[x]))
+                ss = ['total: {0}'.format(sum([v for v in test_counts.values()]))]
+                ss += ['{0}: {1}'.format(x,test_counts[x])
                        for x in ['ok', 'error', 'fail']]
                 counts = ' | '.join(ss)
                 status_bar.addstr(0,0, counts)
                 status_bar.refresh()
-
-            # scr.addstr(1,0, str(len(tests['ok'])))
-            # scr.refresh()
+                # update test list
+                for i in range(len(tests)):
+                    t = tests[i]
+                    scr.addstr(i+1, 0, str(t))
+                scr.refresh()
     except KeyboardInterrupt:
         return
 
