@@ -57,11 +57,15 @@ def curses_main(scr, test_queue):
 
             # handle any new tests
             try:
-                t = test_queue.get(block=False)
-                test_counts[t[0]] += 1
-                if t[0] != 'ok':
-                    tests.append(t[1])
-                new_tests = True
+                s, t, e = test_queue.get(block=False)
+                # tests done
+                if s is None and t is None and e is None:
+                    pass
+                else:
+                    test_counts[s] += 1
+                    if e is not None:
+                        tests.append((t, e))
+                    new_tests = True
             except Queue.Empty:
                 new_tests = False
 
@@ -85,7 +89,7 @@ def curses_main(scr, test_queue):
                 status_bar.refresh()
                 # update test list
                 for i in range(len(tests)):
-                    t = tests[i]
+                    t,e = tests[i]
                     if test_wins.get(i, None) is None:
                         HEIGHT = 5
                         win = curses.newwin(HEIGHT, size[0], HEIGHT*i + 1, 0)
@@ -121,15 +125,16 @@ class BoogerPlugin(Plugin):
     ############################################################################
     # test outcome handler
     def addSuccess(self, test):
-        self.test_queue.put(('ok', test))
+        self.test_queue.put( ('ok', test, None) )
     def addFailure(self, test, err):
-        self.test_queue.put(('fail', test))
+        self.test_queue.put( ('fail', test, err) )
     def addError(self, test, err):
-        self.test_queue.put(('error', test))
+        self.test_queue.put( ('error', test, err) )
 
     ############################################################################
     # handle other boilerplate
     def finalize(self, result):
+        self.test_queue.put( (None,None,None) )
         self.curses.join()
     def report(self, stream):
         pass
