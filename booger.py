@@ -91,10 +91,18 @@ def curses_main(scr, test_queue):
                 for i in range(len(tests)):
                     t,e = tests[i]
                     if test_wins.get(i, None) is None:
-                        HEIGHT = 5
+                        HEIGHT = 10
                         win = curses.newwin(HEIGHT, size[0], HEIGHT*i + 1, 0)
                         win.border()
                         win.addstr(0, 5, str(t))
+                        # display error (type, exception, traceback)
+                        #win.addstr(1, 2, e[1].message)
+                        #win.addstr(1, 2, str(dir(e[2].tb_frame.f_code)))
+                        # win.addstr(2, 2, str(dir(e[2].tb_frame.f_code)))
+                        win.addstr(2, 2, str(e[2].tb_frame.f_code.co_filename))
+                        win.addstr(3, 2, str(e[2].tb_next.tb_frame.f_code.co_filename))
+                        win.addstr(4, 2, str(e[2].tb_next.tb_next.tb_frame.f_code.co_filename))
+                        win.addstr(5, 2, '  ' + e[1].__class__.__name__ + ': ' + e[1].message)
                         win.refresh()
                         test_wins[i] = win
                 scr.refresh()
