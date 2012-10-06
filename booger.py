@@ -21,6 +21,8 @@ from nose.plugins import Plugin
 ################################################################################
 # windowing stuff
 
+TEST_WIN_HEIGHT = 5
+
 def get_new_tests(queue, counts, test_list):
     '''
     Retrieves tests from the queue, puts them in the right place
@@ -48,7 +50,7 @@ def get_new_tests(queue, counts, test_list):
         if s is None and t is None and e is None:
             return True, True
 
-def setup_status_bar(size, init_msg='Running tests...'):
+def init_status_bar(size, init_msg='Running tests...'):
     status_bar = curses.newwin(1,size[0])
     status_bar.attrset(curses.A_BOLD)
     status_bar.bkgdset(ord(' '), curses.color_pair(1))
@@ -67,6 +69,33 @@ def update_status_bar(status_bar, test_counts, tests_done):
     counts = ' | '.join(ss)
     status_bar.addstr(0,0, counts)
     status_bar.refresh()
+
+def init_test_win(test_area, size, test, test_number):
+    win = test_area.derwin(TEST_WIN_HEIGHT, size[0],
+                           TEST_WIN_HEIGHT*test_number, 0)
+    return win
+
+def update_test_win(win, size, test, err):
+    win.clear()
+    win.border()
+    win.addstr(0, 5, str(test), curses.A_BOLD)
+    # display error (type, exception, traceback)
+    # get last tb_frame
+    frame = err[2]
+    while frame.tb_next:
+        frame = frame.tb_next
+    # get file failed in
+    filename = frame.tb_frame.f_code.co_filename
+    win.addstr(1, 1, filename[:size[0]-2])
+    # get line of source code failed on
+    f = open(filename)
+    line = f.readlines()[frame.tb_frame.f_lineno-1]
+    f.close()
+    win.addstr(2, 1, line.rstrip()[:size[0]])
+    # display what and how
+    exception_name = err[1].__class__.__name__
+    err_str = '{0}: {1}'.format(exception_name, err[1].message)[:size[0]-2]
+    win.addstr(3, 1, err_str)
 
 def curses_main(scr, test_queue):
     '''
@@ -124,7 +153,7 @@ def curses_main(scr, test_queue):
 
             # do some drawing
             if status_bar is None:
-                status_bar = setup_status_bar(size)
+                status_bar = init_status_bar(size)
             if test_area is None:
                 test_area = curses.newpad(2000,400)
                 # initial refresh
@@ -135,28 +164,10 @@ def curses_main(scr, test_queue):
                 for i in range(len(tests)):
                     t,e = tests[i]
                     if test_wins.get(i, None) is None:
-                        HEIGHT = 5
-                        win = test_area.derwin(HEIGHT, size[0], HEIGHT*i, 0)
-                        win.border()
-                        win.addstr(0, 5, str(t), curses.A_BOLD)
-                        # display error (type, exception, traceback)
-                        # get last tb_frame
-                        frame = e[2]
-                        while frame.tb_next:
-                            frame = frame.tb_next
-                        # get file failed in
-                        filename = frame.tb_frame.f_code.co_filename
-                        win.addstr(1, 1, filename[:size[0]-2])
-                        # get line of source code failed on
-                        f = open(filename)
-                        line = f.readlines()[frame.tb_frame.f_lineno-1]
-                        win.addstr(2, 1, line.rstrip()[:size[0]])
-                        # display what and how
-                        exception_name = e[1].__class__.__name__
-                        err_str = '{0}: {1}'.format(exception_name,
-                                                    e[1].message)[:size[0]-2]
-                        win.addstr(3, 1, err_str)
+                        win = init_test_win(test_area, size, t, i)
                         # windowing business
+                        update_test_win(win, size, t, e)
+
                         test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
                         test_wins[i] = win
                 scr.refresh()
