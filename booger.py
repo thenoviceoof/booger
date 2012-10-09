@@ -97,6 +97,29 @@ def update_test_win(win, size, test, err):
     err_str = '{0}: {1}'.format(exception_name, err[1].message)[:size[0]-2]
     win.addstr(3, 1, err_str)
 
+# handle book keeping (update areas that need updating)
+class CursesTestGUI(object):
+    def __init__(self):
+        self.test_counts = {
+            'ok': 0,
+            'fail': 0,
+            'error': 0,
+        }
+        self.tests = []
+
+        self.size = (0,0)
+
+        # state
+        self.done = False
+        self.new_tests = False
+
+        # gui elements
+        self.status_bar = None
+        self.test_area = None
+        self.cur_test = None
+        self.prev_test = None
+        self.test_windows = {}
+
 def curses_main(scr, test_queue):
     '''
     The curses loop
@@ -144,6 +167,8 @@ def curses_main(scr, test_queue):
                     cur_test += {curses.KEY_DOWN: 1, curses.KEY_UP: -1,
                                  ord('n'): 1, ord('p'): -1}[c]
                     cur_test %= len(tests)
+            elif c == curses.KEY_ENTER:
+                pass
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
                 test_area = None
