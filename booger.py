@@ -127,6 +127,7 @@ def curses_main(scr, test_queue):
     test_area = None
     cur_test = None
     prev_test = None
+
     try:
         while 1:
             # handle input
@@ -135,12 +136,13 @@ def curses_main(scr, test_queue):
             size = scr.getmaxyx()[1], scr.getmaxyx()[0]
             if c == ord('q'):
                 return
-            elif c == curses.KEY_DOWN or c == curses.KEY_UP:
+            elif c in [curses.KEY_DOWN, curses.KEY_UP, ord('n'), ord('p')]:
                 prev_test = cur_test
                 if cur_test is None:
                     cur_test = 0
                 else:
-                    cur_test += {curses.KEY_DOWN: 1, curses.KEY_UP: -1}[c]
+                    cur_test += {curses.KEY_DOWN: 1, curses.KEY_UP: -1,
+                                 ord('n'): 1, ord('p'): -1}[c]
                     cur_test %= len(tests)
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
