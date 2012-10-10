@@ -237,7 +237,8 @@ class BoogerPlugin(Plugin):
         self.test_queue.put( (None,None,None) )
         self.curses.join()
     def report(self, stream):
-        pass
+        # stop normal report stdout from printing
+        return False
     def setOutputStream(self, stream):
         self.stream = stream
         class Dummy:
