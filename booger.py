@@ -151,6 +151,9 @@ def curses_main(scr, test_queue):
     cur_test = None
     prev_test = None
 
+    detail_view = False
+    detail_win = None
+
     try:
         while 1:
             # handle input
@@ -168,7 +171,7 @@ def curses_main(scr, test_queue):
                                  ord('n'): 1, ord('p'): -1}[c]
                     cur_test %= len(tests)
             elif c == curses.KEY_ENTER:
-                pass
+                detail_view = not detail_view
             elif c == curses.KEY_RESIZE or size != prev_size:
                 status_bar = None
                 test_area = None
@@ -211,6 +214,13 @@ def curses_main(scr, test_queue):
                 update_test_win(test_wins[cur_test], size,
                                 tests[cur_test][0], tests[cur_test][1])
                 test_area.refresh(0,0, 1,0, size[1]-1,size[0]-1)
+            if detail_view and cur_test is not None:
+                if detail_win is None:
+                    detail_win = curses.newpad(2000,400)
+                    detail_win.addstr(0,0, 'HELLOWORSD')
+                    detail_win.refresh(0,0, 0,0, size[1], size[0])
+            elif detail_view is False and detail_win is not None:
+                detail_win.refresh(0,0, 0,0, 0,0)
     except KeyboardInterrupt:
         return
 
@@ -250,7 +260,8 @@ class BoogerPlugin(Plugin):
         self.test_queue.put( (None,None,None) )
         self.curses.join()
     def report(self, stream):
-        pass
+        # stop normal report stdout from printing
+        return False
     def setOutputStream(self, stream):
         self.stream = stream
         class Dummy:
