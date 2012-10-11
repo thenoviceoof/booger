@@ -29,6 +29,32 @@ STATUS_BAR_FINISHED = 'Tests Done!     '
 
 TEST_WIN_HEIGHT = 5
 
+def get_new_tests(queue, counts, test_list):
+    '''
+    Retrieves tests from the queue, puts them in the right place
+    Returns a tuple:
+        list of tuples (status, test object, err)
+        whether tests are done
+    '''
+    try:
+        s, t, e = queue.get(block=False)
+    except Queue.Empty:
+        return [], False
+    # tests done
+    if s is None and t is None and e is None:
+        return [], True
+    # keep getting until we're empty
+    tests = []
+    while 1:
+        tests.append((s,t,e))
+        try:
+            s, t, e = queue.get(block=False)
+        except Queue.Empty:
+            return tests, False
+        # tests done
+        if s is None and t is None and e is None:
+            return tests, True
+
 class StatusBar(object):
     def __init__(self, *args, **kwargs):
         self.test_counts = {
@@ -65,42 +91,6 @@ class StatusBar(object):
         self.test_counts[test_type] += 1
     def finish(self):
         self.finished = True
-
-def get_new_tests(queue, counts, test_list):
-    '''
-    Retrieves tests from the queue, puts them in the right place
-    Returns tuple:
-      First, whether new tests were gotten
-      Second, whether the output is finished
-    '''
-    try:
-        s, t, e = queue.get(block=False)
-    except Queue.Empty:
-        return False, False
-    # tests done
-    if s is None and t is None and e is None:
-        return False, True
-    # keep getting until we're empty
-    while 1:
-        counts[s] += 1
-        if e is not None:
-            test_list.append((t,e))
-        try:
-            s, t, e = queue.get(block=False)
-        except Queue.Empty:
-            return True, False
-        # tests done
-        if s is None and t is None and e is None:
-            return True, True
-
-def init_status_bar(size, init_msg='Running tests...'):
-    status_bar = curses.newwin(1,size[0])
-    status_bar.attrset(curses.A_BOLD)
-    status_bar.bkgdset(ord(' '), curses.color_pair(1))
-    status_bar.clear()
-    status_bar.addstr(0,0, init_msg + ' ' * (size[0] - len(init_msg) - 1))
-    status_bar.refresh()
-    return status_bar
 
 def update_status_bar(status_bar, test_counts, tests_done):
     # update status bar
