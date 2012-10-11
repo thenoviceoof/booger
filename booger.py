@@ -21,7 +21,50 @@ from nose.plugins import Plugin
 ################################################################################
 # windowing stuff
 
+MAX_WIDTH = 300
+MAX_HEIGHT = 2000
+
+STATUS_BAR_RUNNING  = 'Tests Running...'
+STATUS_BAR_FINISHED = 'Tests Done!     '
+
 TEST_WIN_HEIGHT = 5
+
+class StatusBar(object):
+    def __init__(self, *args, **kwargs):
+        self.test_counts = {
+            'ok': 0,
+            'fail': 0,
+            'error': 0,
+        }
+        self.finished = False
+
+        # make the curses object
+        self.window = curses.newpad(1, MAX_WIDTH)
+        self.window.attrset(curses.A_BOLD)
+        self.window.clear()
+        self.window.addstr(0,0, STATUS_BAR_RUNNING)
+        self.window.refresh()
+
+        super(StatusBar, self).__init__(self, *args, **kwargs)
+
+    def update(self):
+        self.window.clear()
+        status = []
+        if self.finished:
+            status += STATUS_BAR_FINISHED
+        else:
+            status += STATUS_BAR_RUNNING
+        status += ['{0}: {1}'.format(x,test_counts[x])
+                   for x in ['ok', 'error', 'fail']]
+        status_str = ' | '.join(status)
+        self.window.addstr(0,0, status_str)
+        size = scr.getmaxyx()[1], scr.getmaxyx()[0]
+        self.window.update(0,0, 0,0, 1,size[0])
+
+    def add_test(self, test_type):
+        self.test_counts[test_type] += 1
+    def finish(self):
+        self.finished = True
 
 def get_new_tests(queue, counts, test_list):
     '''
@@ -99,7 +142,7 @@ def update_test_win(win, size, test, err):
 
 # handle book keeping (update areas that need updating)
 class CursesTestGUI(object):
-    def __init__(self, screen, *args, *kwargs):
+    def __init__(self, screen, *args, **kwargs):
         self.screen = screen
         # state in [list, detail]
         self.state = 'list'
@@ -156,28 +199,6 @@ class CursesTestGUI(object):
             self.test_windows.append(TestWindow(test))  # this is a pad?
     def finish(self):
         self.status_bar.finish()
-
-class StatusBar(object):
-    def __init__(self, *args, **kwargs):
-        self.test_counts = {
-            'ok': 0,
-            'fail': 0,
-            'error': 0,
-        }
-        self.finished = False
-
-        # make the curses object
-        self.window = 
-
-        super(StatusBar, self).__init__(self, *args, **kwargs)
-
-    def update(self):
-        pass
-
-    def add_test(self, test_type):
-        self.test_counts[test_type] += 1
-    def finish(self):
-        self.finished = True
 
 def curses_main(scr, test_queue):
     # set up the main window, which sets up everything else
