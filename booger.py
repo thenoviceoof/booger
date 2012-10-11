@@ -21,8 +21,8 @@ from nose.plugins import Plugin
 ################################################################################
 # windowing stuff
 
-MAX_WIDTH = 300
-MAX_HEIGHT = 2000
+MAX_PAD_WIDTH = 300
+MAX_PAD_HEIGHT = 2000
 
 STATUS_BAR_RUNNING  = 'Tests Running...'
 STATUS_BAR_FINISHED = 'Tests Done!     '
@@ -66,7 +66,7 @@ class StatusBar(object):
         self.finished = False
 
         # make the curses object
-        self.window = curses.newpad(1, MAX_WIDTH)
+        self.window = curses.newpad(1, MAX_PAD_WIDTH)
         self.window.attrset(curses.A_BOLD)
         self.window.bkgdset(ord(' '), curses.color_pair(1))
         self.update()
