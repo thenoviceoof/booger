@@ -92,17 +92,6 @@ class StatusBar(object):
     def finish(self):
         self.finished = True
 
-def update_status_bar(status_bar, test_counts, tests_done):
-    # update status bar
-    status_bar.clear()
-    ss = ['Tests Running...' if not tests_done else 'Tests Done!     ',
-          'total: {0}'.format(sum([v for v in test_counts.values()]))]
-    ss += ['{0}: {1}'.format(x,test_counts[x])
-           for x in ['ok', 'error', 'fail']]
-    counts = ' | '.join(ss)
-    status_bar.addstr(0,0, counts)
-    status_bar.refresh()
-
 def init_test_win(test_area, size, test, test_number):
     win = test_area.derwin(TEST_WIN_HEIGHT, size[0],
                            TEST_WIN_HEIGHT*test_number, 0)
