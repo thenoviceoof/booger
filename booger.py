@@ -99,13 +99,18 @@ def update_test_win(win, size, test, err):
 
 # handle book keeping (update areas that need updating)
 class CursesTestGUI(object):
-    def __init__(self):
+    def __init__(self, screen, *args, *kwargs):
+        self.screen = screen
+        # state in [list, detail]
+        self.state = 'list'
+
         self.test_counts = {
             'ok': 0,
             'fail': 0,
             'error': 0,
         }
         self.tests = []
+        self.test_windows = []
 
         self.size = (0,0)
 
@@ -118,7 +123,46 @@ class CursesTestGUI(object):
         self.test_area = None
         self.cur_test = None
         self.prev_test = None
-        self.test_windows = {}
+
+        super(CursesTestGUI, self).__init__()
+
+    # draw things
+    def update(self):
+        pass
+
+    # movement 
+    def next(self, n=1):
+        if self.state == 'list':
+            self.move_list(n)
+    def prev(self, n=1):
+        if self.state == 'list':
+            self.move_list(-n)
+
+    def move_list(self, n=1):
+        self.test_windows[cur_test].deselect()
+
+        if self.cur_test is None:
+            self.cur_test = 0
+        else:
+            self.cur_test += n
+            self.cur_test %= len(self.tests)
+
+        self.test_windows[cur_test].select()
+
+    # handle modality
+    def open_modal(self):
+        pass
+
+    # test related things
+    def add_test(self, test_type, test):
+        # update the status bar
+        self.status_bar.add_test(test_type)
+
+        if test_type != 'ok':
+            self.tests.append(test)
+            self.test_windows.append(TestWindow(test))  # this is a pad?
+    def finish(self):
+        self.status_bar.finish()
 
 def curses_main(scr, test_queue):
     # set up the main window, which sets up everything else
@@ -151,8 +195,10 @@ def curses_main(scr, test_queue):
             if not tests_done:
                 new_tests, tests_done = get_new_tests(test_queue)
             if new_tests:
-                for test in new_tests:
-                    interface.add_test(test)
+                for stat, test in new_tests:
+                    interface.add_test(stat, test)
+            if tests_done:
+                interface.finish()
 
             interface.update()
     except KeyboardInterrupt:
