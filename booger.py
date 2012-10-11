@@ -92,6 +92,19 @@ class StatusBar(object):
     def finish(self):
         self.finished = True
 
+class TestList(object):
+    def __init__(self, screen, *args, **kwargs):
+        self.screen = screen
+        self.window = screen.addpad(MAX_PAD_HEIGHT,MAX_PAD_WIDTH)
+        self.window_list = []
+
+        super(TestList, self).__init__(*args, **kwargs)
+
+    def update(self):
+        self.window.refresh()
+    def add_test(self, test):
+        pass
+
 def init_test_win(test_area, size, test, test_number):
     win = test_area.derwin(TEST_WIN_HEIGHT, size[0],
                            TEST_WIN_HEIGHT*test_number, 0)
