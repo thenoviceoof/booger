@@ -104,12 +104,6 @@ class CursesTestGUI(object):
         # state in [list, detail]
         self.state = 'list'
 
-        self.test_counts = {
-            'ok': 0,
-            'fail': 0,
-            'error': 0,
-        }
-        self.tests = []
         self.test_windows = []
 
         self.size = (0,0)
@@ -159,10 +153,31 @@ class CursesTestGUI(object):
         self.status_bar.add_test(test_type)
 
         if test_type != 'ok':
-            self.tests.append(test)
             self.test_windows.append(TestWindow(test))  # this is a pad?
     def finish(self):
         self.status_bar.finish()
+
+class StatusBar(object):
+    def __init__(self, *args, **kwargs):
+        self.test_counts = {
+            'ok': 0,
+            'fail': 0,
+            'error': 0,
+        }
+        self.finished = False
+
+        # make the curses object
+        self.window = 
+
+        super(StatusBar, self).__init__(self, *args, **kwargs)
+
+    def update(self):
+        pass
+
+    def add_test(self, test_type):
+        self.test_counts[test_type] += 1
+    def finish(self):
+        self.finished = True
 
 def curses_main(scr, test_queue):
     # set up the main window, which sets up everything else
