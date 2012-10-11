@@ -29,7 +29,7 @@ STATUS_BAR_FINISHED = 'Tests Done!     '
 
 TEST_WIN_HEIGHT = 5
 
-def get_new_tests(queue, counts, test_list):
+def get_new_tests(queue):
     '''
     Retrieves tests from the queue, puts them in the right place
     Returns a tuple:
@@ -56,7 +56,8 @@ def get_new_tests(queue, counts, test_list):
             return tests, True
 
 class StatusBar(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, screen, *args, **kwargs):
+        self.screen = screen
         self.test_counts = {
             'ok': 0,
             'fail': 0,
@@ -67,25 +68,24 @@ class StatusBar(object):
         # make the curses object
         self.window = curses.newpad(1, MAX_WIDTH)
         self.window.attrset(curses.A_BOLD)
-        self.window.clear()
-        self.window.addstr(0,0, STATUS_BAR_RUNNING)
-        self.window.refresh()
+        self.window.bkgdset(ord(' '), curses.color_pair(1))
+        self.update()
 
-        super(StatusBar, self).__init__(self, *args, **kwargs)
+        super(StatusBar, self).__init__(*args, **kwargs)
 
     def update(self):
         self.window.clear()
         status = []
         if self.finished:
-            status += STATUS_BAR_FINISHED
+            status += [STATUS_BAR_FINISHED]
         else:
-            status += STATUS_BAR_RUNNING
-        status += ['{0}: {1}'.format(x,test_counts[x])
+            status += [STATUS_BAR_RUNNING]
+        status += ['{0}: {1}'.format(x, self.test_counts[x])
                    for x in ['ok', 'error', 'fail']]
         status_str = ' | '.join(status)
         self.window.addstr(0,0, status_str)
-        size = scr.getmaxyx()[1], scr.getmaxyx()[0]
-        self.window.update(0,0, 0,0, 1,size[0])
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        self.window.refresh(0,0, 0,0, 1,size[0]-1)
 
     def add_test(self, test_type):
         self.test_counts[test_type] += 1
@@ -120,7 +120,7 @@ def update_test_win(win, size, test, err):
     win.addstr(3, 1, err_str)
 
 # handle book keeping (update areas that need updating)
-class CursesTestGUI(object):
+class TestsGUI(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
         # state in [list, detail]
@@ -135,16 +135,16 @@ class CursesTestGUI(object):
         self.new_tests = False
 
         # gui elements
-        self.status_bar = None
+        self.status_bar = StatusBar(screen)
         self.test_area = None
         self.cur_test = None
         self.prev_test = None
 
-        super(CursesTestGUI, self).__init__()
+        super(TestsGUI, self).__init__()
 
     # draw things
     def update(self):
-        pass
+        self.status_bar.update()
 
     # movement 
     def next(self, n=1):
@@ -174,14 +174,14 @@ class CursesTestGUI(object):
         # update the status bar
         self.status_bar.add_test(test_type)
 
-        if test_type != 'ok':
-            self.test_windows.append(TestWindow(test))  # this is a pad?
+        # if test_type != 'ok':
+        #     self.test_windows.append(TestWindow(test))  # this is a pad?
     def finish(self):
         self.status_bar.finish()
 
 def curses_main(scr, test_queue):
     # set up the main window, which sets up everything else
-    interface = CursesTestsGUI(scr)
+    interface = TestsGUI(scr)
 
     # set up curses colors
     curses.use_default_colors()
@@ -191,6 +191,7 @@ def curses_main(scr, test_queue):
     curses.halfdelay(1)
 
     interface.update()
+    tests_done = False
     try:
         while 1:
             # handle input
@@ -203,15 +204,16 @@ def curses_main(scr, test_queue):
                 interface.prev()
             elif c == curses.KEY_ENTER:
                 interface.open_modal()
-            elif c == curses.KEY_RESIZE or size != prev_size:
+            elif c == curses.KEY_RESIZE:
                 interface.update()
 
             # handle any new tests
             if not tests_done:
                 new_tests, tests_done = get_new_tests(test_queue)
             if new_tests:
-                for stat, test in new_tests:
-                    interface.add_test(stat, test)
+                for stat, test, err in new_tests:
+                    interface.add_test(stat, err)
+                new_tests = []
             if tests_done:
                 interface.finish()
 
