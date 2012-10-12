@@ -55,6 +55,7 @@ def get_new_tests(queue):
         if s is None and t is None and e is None:
             return tests, True
 
+
 class StatusBar(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
@@ -92,23 +93,28 @@ class StatusBar(object):
     def finish(self):
         self.finished = True
 
+
 class TestList(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
-        self.window = screen.addpad(MAX_PAD_HEIGHT,MAX_PAD_WIDTH)
+        self.window = curses.newpad(MAX_PAD_HEIGHT,MAX_PAD_WIDTH)
         self.window_list = []
 
         super(TestList, self).__init__(*args, **kwargs)
 
     def update(self):
-        self.window.refresh()
+        self.window.clear()
+        # sizing
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        acc = 1
+        for w in self.window_list:
+            w.refresh(0,0, 1,0, 5,10)
+            w.box()
+            acc += 1
+        self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
     def add_test(self, test):
-        pass
-
-def init_test_win(test_area, size, test, test_number):
-    win = test_area.derwin(TEST_WIN_HEIGHT, size[0],
-                           TEST_WIN_HEIGHT*test_number, 0)
-    return win
+        win = self.window.subpad(20, MAX_PAD_WIDTH-1, 0,0)
+        self.window_list.append(win)
 
 def update_test_win(win, size, test, err):
     win.clear()
@@ -139,25 +145,20 @@ class TestsGUI(object):
         # state in [list, detail]
         self.state = 'list'
 
-        self.test_windows = []
-
-        self.size = (0,0)
-
         # state
         self.done = False
         self.new_tests = False
 
         # gui elements
         self.status_bar = StatusBar(screen)
-        self.test_area = None
-        self.cur_test = None
-        self.prev_test = None
+        self.test_list = TestList(screen)
 
         super(TestsGUI, self).__init__()
 
     # draw things
     def update(self):
         self.status_bar.update()
+        self.test_list.update()
 
     # movement 
     def next(self, n=1):
@@ -187,8 +188,9 @@ class TestsGUI(object):
         # update the status bar
         self.status_bar.add_test(test_type)
 
-        # if test_type != 'ok':
-        #     self.test_windows.append(TestWindow(test))  # this is a pad?
+        if test_type != 'ok':
+            self.test_list.add_test(test)
+            # self.test_windows.append(TestWindow(test))  # this is a pad?
     def finish(self):
         self.status_bar.finish()
 
