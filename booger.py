@@ -164,10 +164,23 @@ class TestWindow(object):
 
         # add controls
         if self.selected:
-            self.window.addstr(lines-1, size[0]-40, 'Traceback')
-            self.window.addstr(lines-1, size[0]-30, 'Stdout')
-            self.window.addstr(lines-1, size[0]-20, 'Stderr')
-            self.window.addstr(lines-1, size[0]-10, 'Logging')
+            options = ['T_raceback']
+            if self.test.capturedOutput:
+                options.append('stdO_ut')
+
+            if self.test.capturedLogging:
+                options.append('L_ogging')
+
+            acc = 3
+            for opt in reversed(options):
+                opts = opt.split('_')
+                acc += len(opts[0]) + len(opts[1]) + 2
+                self.window.addstr(lines-1, size[0]-acc, opts[0][:-1])
+                self.window.addstr(lines-1, size[0]-acc + len(opts[0][:-1]),
+                                   opts[0][-1], curses.A_BOLD)
+                self.window.addstr(lines-1,
+                                   size[0]-acc + len(opts[0]),
+                                   opts[1])
 
         return lines
 
@@ -238,6 +251,10 @@ class TestModal(object):
         # display stdout
         if self.test.capturedOutput:
             self.window.addstr(30, 0, self.test.capturedOutput)
+
+        # display logout
+        if self.test.capturedLogging:
+            self.window.addstr(35, 0, '\n'.join(self.test.capturedLogging))
 
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
