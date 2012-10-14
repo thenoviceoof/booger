@@ -95,6 +95,14 @@ class StatusBar(object):
         self.finished = True
 
 
+def get_frames(tb_ptr):
+    # get tb_frames
+    frames = []
+    while tb_ptr:
+        frames.append(tb_ptr.tb_frame)
+        tb_ptr = tb_ptr.tb_next
+    return frames
+
 class TestWindow(object):
     def __init__(self, screen, test_list, test_status, test, err,
                  *args, **kwargs):
@@ -107,12 +115,7 @@ class TestWindow(object):
         self.err = err
         self.y = 0
 
-        # get tb_frames
-        self.frames = []
-        frame = self.err[2]
-        while frame:
-            self.frames.append(frame)
-            frame = frame.tb_next
+        self.frames = get_frames(self.err[2])
 
         super(TestWindow, self).__init__(*args, **kwargs)
 
@@ -145,11 +148,11 @@ class TestWindow(object):
         for i in range(traceback_lines):
             j = -traceback_lines+i
             # get file failed in
-            filename = self.frames[j].tb_frame.f_code.co_filename
+            filename = self.frames[j].f_code.co_filename
             self.window.addstr(1 + i*2, 1, filename[:size[0]-2])
             # get line of source code failed on
             f = open(filename)
-            line = f.readlines()[self.frames[j].tb_frame.f_lineno-1]
+            line = f.readlines()[self.frames[j].f_lineno-1]
             f.close()
             self.window.addstr(2 + i*2, 1, line.rstrip()[:size[0]])
         # display what and how
@@ -186,8 +189,32 @@ class TestModal(object):
         self.opened = False
 
     def update(self):
+        if not self.opened:
+            return
+
+        self.frames = get_frames(self.err[2])
+
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
-        self.window.addstr(0,0, 'Hello world')
+
+        # display traceback
+        context = 3
+        for i in range(len(self.frames)):
+            # get file failed in
+            filename = self.frames[i].f_code.co_filename
+            self.window.bkgdset(ord(' '), curses.color_pair(1))
+            self.window.addstr(1 + i*(2+context*2), 1, filename[:size[0]-2])
+            self.window.bkgdset(ord(' '), curses.color_pair(0))
+            # get line of source code failed on
+            f = open(filename)
+            lines = f.readlines()
+            ls = lines[self.frames[i].f_lineno-1 - context:
+                           self.frames[i].f_lineno-1 + context]
+            f.close()
+            for j in range(len(ls)):
+                l = ls[j]
+                self.window.addstr(2 + i*(2+context*2) + j, 1,
+                                   l.rstrip()[:size[0]])
+
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
         self.test = test
