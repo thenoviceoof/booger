@@ -1,6 +1,8 @@
 import sys
 import logging
 
+log = logging.getLogger(__name__)
+
 # test cases
 def test_test():
     assert False
@@ -14,5 +16,5 @@ def mu_test():
     print "BANG BANG"
 
     sys.stderr.write("MU\n")
-    logging.debug('DANG')
+    log.debug('DANG')
     assert aoeu

@@ -204,6 +204,8 @@ class TestModal(object):
 
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
 
+        self.window.clear()
+
         # display traceback
         context = 3
         for i in range(len(self.frames)):
@@ -229,6 +231,10 @@ class TestModal(object):
                 self.window.addstr(2 + i*(2+context*2) + j, 1,
                                    l.rstrip()[:size[0]])
             self.window.addstr(2 + i*(2+context*2) + context, 0, '*')
+
+        if self.test.stdout:
+            # self.window.addstr(30, 0, self.test.capturedOutput)
+            self.window.addstr(0, 0, self.test.stdout)
 
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
@@ -407,11 +413,6 @@ class BoogerPlugin(Plugin):
     def __init__(self, *args, **kwargs):
         super(BoogerPlugin, self).__init__(*args, **kwargs)
 
-        self.stdout = []
-        self.stderr = []
-        self.logging = []
-        self._buf = None
-
         self.test_queue = Queue.Queue()
         self.curses = threading.Thread(target=curses_run,
                                        args=(self.test_queue,))
@@ -432,26 +433,29 @@ class BoogerPlugin(Plugin):
         self.enabled = options.booger
 
     ############################################################################
-    # pre-post test
-    def begin(self):
-        pass
-    def beforeTest(self, test):
-        pass
-    def afterTest(self, test):
-        pass
-
-    ############################################################################
     # test outcome handler
+    def get_stdout(self):
+        if isinstance(sys.stdout, StringIO):
+            return sys.stdout.getvalue()
+        return None
+
     def addSuccess(self, test):
         self.test_queue.put( ('ok', test, None) )
     def addFailure(self, test, err):
+        stdout = self.get_stdout()
+        test.stdout = stdout
         self.test_queue.put( ('fail', test, err) )
     def addError(self, test, err):
+        stdout = self.get_stdout()
+        test.stdout = stdout
         self.test_queue.put( ('error', test, err) )
 
     ############################################################################
     # handle other boilerplate
     def finalize(self, result):
+        while self.stdout:
+            self.end_stdcapture()
+
         self.test_queue.put( (None,None,None) )
         self.curses.join()
     def report(self, stream):
