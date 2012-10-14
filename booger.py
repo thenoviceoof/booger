@@ -95,6 +95,28 @@ class StatusBar(object):
         self.finished = True
 
 
+class TestWindow(object):
+    def __init__(self, screen, test_list, test, err, *args, **kwargs):
+        self.screen = screen
+        self.window = test_list.subwin(1,1, 0,0)
+
+        self.selected = False
+        self.test = test
+        self.err = err
+
+        super(TestWindow, self).__init__(*args, **kwargs)
+
+    def update(self, y=0):
+        # don't actually refresh
+        self.window.clear()
+        self.window.box()
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+
+        self.window.mvderwin(y, 0)
+        self.window.resize(TEST_WIN_HEIGHT, size[0])
+        return TEST_WIN_HEIGHT
+
+
 class TestList(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
@@ -109,14 +131,13 @@ class TestList(object):
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         acc = 0
         for w in self.window_list:
-            w.mvderwin(acc, 0)
-            w.resize(5, size[0])
-            w.box()
+            w.update(acc)
             acc += TEST_WIN_HEIGHT
         self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
     def add_test(self, test):
-        win = self.window.subwin(1, 1, 0,0)
-        self.window_list.append(win)
+        tw = TestWindow(self.screen, self.window, test[0], test[1])
+        self.window_list.append(tw)
+
 
 def update_test_win(win, size, test, err):
     win.clear()
