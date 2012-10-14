@@ -193,11 +193,6 @@ class TestWindow(object):
         self.window.bkgdset(ord(' '), curses.color_pair(0))
         self.update()
 
-    def modal(self, modal):
-        '''
-        Given the modal window, write details to it
-        '''
-        modal.addstr(0,0, 'Hello world')
 
 class TestModal(object):
     def __init__(self, screen, *args, **kwargs):
@@ -209,15 +204,28 @@ class TestModal(object):
 
         self.opened = False
 
-    def update(self):
-        if not self.opened:
-            return
-
-        self.frames = get_frames(self.err[2])
-
+    def traceback(self):
+        self.type = 'traceback'
+        self.update()
+        return True
+    def output(self):
+        if self.test.capturedOutput:
+            self.type = 'stdout'
+            self.update()
+            return True
+        else:
+            return False
+    def logging(self):
+        if self.test.capturedLogging:
+            self.type = 'logging'
+            self.update()
+            return True
+        else:
+            return False
+        
+    def update_traceback(self):
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
-
-        self.window.clear()
+        self.frames = get_frames(self.err[2])
 
         # display traceback
         acc = 1
@@ -247,22 +255,30 @@ class TestModal(object):
             if context:
                 self.window.addstr(acc + context + 1, 0, '*')
             acc += 2 + context
+    def update_stdout(self):
+        self.window.addstr(0, 0, self.test.capturedOutput)
+    def update_logging(self):
+        self.window.addstr(0, 0, '\n'.join(self.test.capturedLogging))
+    def update(self):
+        if not self.opened:
+            return
 
-        # display stdout
-        if self.test.capturedOutput:
-            self.window.addstr(30, 0, self.test.capturedOutput)
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        self.window.clear()
 
-        # display logout
-        if self.test.capturedLogging:
-            self.window.addstr(35, 0, '\n'.join(self.test.capturedLogging))
+        if self.type == 'traceback':
+            self.update_traceback()
+        elif self.type == 'stdout':
+            self.update_stdout()
+        elif self.type == 'logging':
+            self.update_logging()
 
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
         self.test = test
         self.err = err
-
         self.opened = True
-    def close(self, test, err):
+    def close(self):
         self.opened = False
 
 class TestList(object):
@@ -308,14 +324,10 @@ class TestList(object):
 
         self.window_list[self.cur_test].select()
 
-    def update_modal(self):
-        self.modal.update()
     def open_modal(self):
         if self.cur_test is not None:
             win = self.window_list[self.cur_test]
             self.modal.open(win.test, win.err)
-    def close_modal(self):
-        pass
 
 
 # handle book keeping (update areas that need updating)
@@ -335,13 +347,39 @@ class TestsGUI(object):
 
         super(TestsGUI, self).__init__()
 
+    # handle input
+    def handle_input(self, c):
+        if c == ord('q'):
+            if self.state == 'list':
+                return False
+            else:
+                self.state = 'list'
+                self.modal_close()
+                return True
+        elif c in [curses.KEY_DOWN, ord('n')]:
+            self.next()
+        elif c in [curses.KEY_UP, ord('p')]:
+            self.prev()
+        elif c in [curses.KEY_ENTER, ord('\n')]:
+            pass
+            # self.toggle_modal()
+        elif c in [ord('t'), ord('T')]:
+            self.modal_traceback()
+        elif c in [ord('o'), ord('O')]:
+            self.modal_output()
+        elif c in [ord('l'), ord('L')]:
+            self.modal_logging()
+        elif c == curses.KEY_RESIZE:
+            self.update()
+        return True
+
     # draw things
     def update(self):
         self.status_bar.update()
         if self.state == 'list':
             self.test_list.update()
-        elif self.state == 'detail':
-            self.test_list.update_modal()
+        else:
+            self.test_list.modal.update()
 
     # movement 
     def next(self, n=1):
@@ -352,14 +390,21 @@ class TestsGUI(object):
             self.test_list.move_list(-n)
 
     # handle modality
-    def toggle_modal(self):
-        self.screen.clear()
-        if self.state == 'list':
-            self.state = 'detail'
-            self.test_list.open_modal()
-        elif self.state == 'detail':
-            self.state = 'list'
-            self.test_list.close_modal()
+    def modal_traceback(self):
+        self.test_list.open_modal()
+        if self.test_list.modal.traceback():
+            self.state = 'traceback'
+    def modal_output(self):
+        self.test_list.open_modal()
+        if self.test_list.modal.output():
+            self.state = 'stdout'
+    def modal_logging(self):
+        self.test_list.open_modal()
+        if self.test_list.modal.logging():
+            self.state = 'logging'
+    def modal_close(self):
+        self.test_list.modal.close()
+        self.state = 'list'
 
     # test related things
     def add_test(self, test_type, test, err):
@@ -388,16 +433,8 @@ def curses_main(scr, test_queue):
         while 1:
             # handle input
             c = scr.getch()
-            if c == ord('q'):
+            if not interface.handle_input(c):
                 return
-            elif c in [curses.KEY_DOWN, ord('n')]:
-                interface.next()
-            elif c in [curses.KEY_UP, ord('p')]:
-                interface.prev()
-            elif c in [curses.KEY_ENTER, ord('\n')]:
-                interface.toggle_modal()
-            elif c == curses.KEY_RESIZE:
-                interface.update()
 
             # handle any new tests
             if not tests_done:
