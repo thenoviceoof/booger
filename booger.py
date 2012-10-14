@@ -96,11 +96,13 @@ class StatusBar(object):
 
 
 class TestWindow(object):
-    def __init__(self, screen, test_list, test, err, *args, **kwargs):
+    def __init__(self, screen, test_list, test_status, test, err,
+                 *args, **kwargs):
         self.screen = screen
         self.window = test_list.subwin(1,1, 0,0)
 
         self.selected = False
+        self.test_status = test_status
         self.test = test
         self.err = err
         self.y = 0
@@ -136,7 +138,8 @@ class TestWindow(object):
         self.window.clear()
         self.window.box()
 
-        self.window.addstr(0, 5, str(self.test), curses.A_BOLD)
+        self.window.addstr(0, 2, ' %s ' % self.test_status[0].upper(), curses.A_BOLD)
+        self.window.addstr(0, 7, str(self.test), curses.A_BOLD)
 
         # display error (type, exception, traceback)
         for i in range(traceback_lines):
@@ -184,8 +187,8 @@ class TestList(object):
         for w in self.window_list:
             acc += w.update(acc)
         self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
-    def add_test(self, test, err):
-        tw = TestWindow(self.screen, self.window, test, err)
+    def add_test(self, test_status, test, err):
+        tw = TestWindow(self.screen, self.window, test_status, test, err)
         self.window_list.append(tw)
 
     def move_list(self, n=1):
@@ -248,8 +251,7 @@ class TestsGUI(object):
         self.status_bar.add_test(test_type)
 
         if test_type != 'ok':
-            self.test_list.add_test(test, err)
-            # self.test_windows.append(TestWindow(test))  # this is a pad?
+            self.test_list.add_test(test_type, test, err)
     def finish(self):
         self.status_bar.finish()
 
