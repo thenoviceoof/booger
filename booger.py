@@ -103,18 +103,54 @@ class TestWindow(object):
         self.selected = False
         self.test = test
         self.err = err
+        self.y = 0
 
         super(TestWindow, self).__init__(*args, **kwargs)
 
-    def update(self, y=0):
-        # don't actually refresh
-        self.window.clear()
-        self.window.box()
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+    def update(self, y=None):
+        '''
+        We don't actually call refresh, since we expect the TestList
+        to be a pad that needs to call refresh itself
+        '''
+        if y is None:
+            y = self.y
 
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         self.window.mvderwin(y, 0)
         self.window.resize(TEST_WIN_HEIGHT, size[0])
+
+        self.window.clear()
+        self.window.box()
+
+        self.window.addstr(0, 5, str(self.test), curses.A_BOLD)
+        
+        # display error (type, exception, traceback)
+        # get last tb_frame
+        frame = self.err[2]
+        while frame.tb_next:
+            frame = frame.tb_next
+        # get file failed in
+        filename = frame.tb_frame.f_code.co_filename
+        self.window.addstr(1, 1, filename[:size[0]-2])
+        # get line of source code failed on
+        f = open(filename)
+        line = f.readlines()[frame.tb_frame.f_lineno-1]
+        f.close()
+        self.window.addstr(2, 1, line.rstrip()[:size[0]])
+        # display what and how
+        exception_name = self.err[1].__class__.__name__
+        err_str = '{0}: {1}'.format(exception_name,
+                                    self.err[1].message)[:size[0]-2]
+        self.window.addstr(3, 1, err_str)
+
         return TEST_WIN_HEIGHT
+
+    def select(self):
+        self.window.bkgdset(ord(' '), curses.color_pair(1))
+        self.update()
+    def deselect(self):
+        self.window.bkgdset(ord(' '), curses.color_pair(0))
+        self.update()
 
 
 class TestList(object):
@@ -122,6 +158,7 @@ class TestList(object):
         self.screen = screen
         self.window = curses.newpad(MAX_PAD_HEIGHT,MAX_PAD_WIDTH)
         self.window_list = []
+        self.cur_test = None
 
         super(TestList, self).__init__(*args, **kwargs)
 
@@ -131,35 +168,31 @@ class TestList(object):
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         acc = 0
         for w in self.window_list:
-            w.update(acc)
-            acc += TEST_WIN_HEIGHT
+            acc += w.update(acc)
         self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
-    def add_test(self, test):
-        tw = TestWindow(self.screen, self.window, test[0], test[1])
+    def add_test(self, test, err):
+        tw = TestWindow(self.screen, self.window, test, err)
         self.window_list.append(tw)
 
+    def move_list(self, n=1):
+        if len(self.window_list) == 0:
+            return
 
-def update_test_win(win, size, test, err):
-    win.clear()
-    win.border()
-    win.addstr(0, 5, str(test), curses.A_BOLD)
-    # display error (type, exception, traceback)
-    # get last tb_frame
-    frame = err[2]
-    while frame.tb_next:
-        frame = frame.tb_next
-    # get file failed in
-    filename = frame.tb_frame.f_code.co_filename
-    win.addstr(1, 1, filename[:size[0]-2])
-    # get line of source code failed on
-    f = open(filename)
-    line = f.readlines()[frame.tb_frame.f_lineno-1]
-    f.close()
-    win.addstr(2, 1, line.rstrip()[:size[0]])
-    # display what and how
-    exception_name = err[1].__class__.__name__
-    err_str = '{0}: {1}'.format(exception_name, err[1].message)[:size[0]-2]
-    win.addstr(3, 1, err_str)
+        if self.cur_test is None:
+            cur_test = 0
+        else:
+            cur_test = self.cur_test
+
+        self.window_list[cur_test].deselect()
+
+        if self.cur_test is None:
+            self.cur_test = 0
+        else:
+            self.cur_test += n
+            self.cur_test %= len(self.window_list)
+
+        self.window_list[self.cur_test].select()
+
 
 # handle book keeping (update areas that need updating)
 class TestsGUI(object):
@@ -186,33 +219,22 @@ class TestsGUI(object):
     # movement 
     def next(self, n=1):
         if self.state == 'list':
-            self.move_list(n)
+            self.test_list.move_list(n)
     def prev(self, n=1):
         if self.state == 'list':
-            self.move_list(-n)
-
-    def move_list(self, n=1):
-        self.test_windows[cur_test].deselect()
-
-        if self.cur_test is None:
-            self.cur_test = 0
-        else:
-            self.cur_test += n
-            self.cur_test %= len(self.tests)
-
-        self.test_windows[cur_test].select()
+            self.test_list.move_list(-n)
 
     # handle modality
     def open_modal(self):
         pass
 
     # test related things
-    def add_test(self, test_type, test):
+    def add_test(self, test_type, test, err):
         # update the status bar
         self.status_bar.add_test(test_type)
 
         if test_type != 'ok':
-            self.test_list.add_test(test)
+            self.test_list.add_test(test, err)
             # self.test_windows.append(TestWindow(test))  # this is a pad?
     def finish(self):
         self.status_bar.finish()
@@ -250,7 +272,7 @@ def curses_main(scr, test_queue):
                 new_tests, tests_done = get_new_tests(test_queue)
             if new_tests:
                 for stat, test, err in new_tests:
-                    interface.add_test(stat, err)
+                    interface.add_test(stat, test, err)
                 new_tests = []
             if tests_done:
                 interface.finish()
