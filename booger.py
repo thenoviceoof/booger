@@ -169,12 +169,42 @@ class TestWindow(object):
         self.window.bkgdset(ord(' '), curses.color_pair(0))
         self.update()
 
+    def modal(self, modal):
+        '''
+        Given the modal window, write details to it
+        '''
+        modal.addstr(0,0, 'Hello world')
+
+class TestModal(object):
+    def __init__(self, screen, *args, **kwargs):
+        self.screen = screen
+        self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
+
+        self.test = None
+        self.err = None
+
+        self.opened = False
+
+    def update(self):
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        self.window.addstr(0,0, 'Hello world')
+        self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
+    def open(self, test, err):
+        self.test = test
+        self.err = err
+
+        self.opened = True
+    def close(self, test, err):
+        self.opened = False
 
 class TestList(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
-        self.window = curses.newpad(MAX_PAD_HEIGHT,MAX_PAD_WIDTH)
+
+        self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
         self.window_list = []
+        self.modal = TestModal(screen)
+
         self.cur_test = None
 
         super(TestList, self).__init__(*args, **kwargs)
@@ -210,6 +240,15 @@ class TestList(object):
 
         self.window_list[self.cur_test].select()
 
+    def update_modal(self):
+        self.modal.update()
+    def open_modal(self):
+        if self.cur_test is not None:
+            win = self.window_list[self.cur_test]
+            self.modal.open(win.test, win.err)
+    def close_modal(self):
+        pass
+
 
 # handle book keeping (update areas that need updating)
 class TestsGUI(object):
@@ -231,7 +270,10 @@ class TestsGUI(object):
     # draw things
     def update(self):
         self.status_bar.update()
-        self.test_list.update()
+        if self.state == 'list':
+            self.test_list.update()
+        elif self.state == 'detail':
+            self.test_list.update_modal()
 
     # movement 
     def next(self, n=1):
@@ -242,8 +284,14 @@ class TestsGUI(object):
             self.test_list.move_list(-n)
 
     # handle modality
-    def open_modal(self):
-        pass
+    def toggle_modal(self):
+        self.screen.clear()
+        if self.state == 'list':
+            self.state = 'detail'
+            self.test_list.open_modal()
+        elif self.state == 'detail':
+            self.state = 'list'
+            self.test_list.close_modal()
 
     # test related things
     def add_test(self, test_type, test, err):
@@ -278,8 +326,8 @@ def curses_main(scr, test_queue):
                 interface.next()
             elif c in [curses.KEY_UP, ord('p')]:
                 interface.prev()
-            elif c == curses.KEY_ENTER:
-                interface.open_modal()
+            elif c in [curses.KEY_ENTER, ord('\n')]:
+                interface.toggle_modal()
             elif c == curses.KEY_RESIZE:
                 interface.update()
 
