@@ -157,9 +157,9 @@ class TestWindow(object):
             f.close()
             self.window.addstr(2 + i*2, 1, line.rstrip()[:size[0]])
         # display what and how
-        exception_name = self.err[1].__class__.__name__
-        err_str = '{0}: {1}'.format(exception_name,
-                                    self.err[1].message)[:size[0]-2]
+        exception = self.test.exception
+        exception_name = exception.__class__.__name__
+        err_str = '{0}: {1}'.format(exception_name, exception)[:size[0]-2]
         self.window.addstr(lines-2, 1, err_str)
 
         # add controls
@@ -189,7 +189,8 @@ class TestWindow(object):
 class TestModal(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
-        self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
+        # self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
+        self.window = curses.newpad(MAX_PAD_HEIGHT, 80)
 
         self.test = None
         self.err = None
@@ -232,9 +233,9 @@ class TestModal(object):
                                    l.rstrip()[:size[0]])
             self.window.addstr(2 + i*(2+context*2) + context, 0, '*')
 
-        if self.test.stdout:
-            # self.window.addstr(30, 0, self.test.capturedOutput)
-            self.window.addstr(0, 0, self.test.stdout)
+        # display stdout
+        if self.test.capturedOutput:
+            self.window.addstr(30, 0, self.test.capturedOutput)
 
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
@@ -434,28 +435,25 @@ class BoogerPlugin(Plugin):
 
     ############################################################################
     # test outcome handler
-    def get_stdout(self):
-        if isinstance(sys.stdout, StringIO):
-            return sys.stdout.getvalue()
-        return None
+
+    # get and save exception before capture/logcapture get to it
+    def formatError(self, test, err):
+        test.exception = err[1]
+        return err
+    def formatFailure(self, test, err):
+        test.exception = err[1]
+        return err
 
     def addSuccess(self, test):
         self.test_queue.put( ('ok', test, None) )
     def addFailure(self, test, err):
-        stdout = self.get_stdout()
-        test.stdout = stdout
         self.test_queue.put( ('fail', test, err) )
     def addError(self, test, err):
-        stdout = self.get_stdout()
-        test.stdout = stdout
         self.test_queue.put( ('error', test, err) )
 
     ############################################################################
     # handle other boilerplate
     def finalize(self, result):
-        while self.stdout:
-            self.end_stdcapture()
-
         self.test_queue.put( (None,None,None) )
         self.curses.join()
     def report(self, stream):
@@ -476,4 +474,5 @@ class BoogerPlugin(Plugin):
 # main
 
 if __name__ == "__main__":
-    nose.main(plugins=[BoogerPlugin()])
+    # nose.main(plugins=[BoogerPlugin()])
+    nose.main(addplugins=[BoogerPlugin()])
