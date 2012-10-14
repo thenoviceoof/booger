@@ -56,6 +56,14 @@ def get_new_tests(queue):
         if s is None and t is None and e is None:
             return tests, True
 
+def get_frames(tb_ptr):
+    # get tb_frames
+    frames = []
+    while tb_ptr:
+        frames.append(tb_ptr.tb_frame)
+        tb_ptr = tb_ptr.tb_next
+    return frames
+
 
 class StatusBar(object):
     def __init__(self, screen, *args, **kwargs):
@@ -95,14 +103,6 @@ class StatusBar(object):
     def finish(self):
         self.finished = True
 
-
-def get_frames(tb_ptr):
-    # get tb_frames
-    frames = []
-    while tb_ptr:
-        frames.append(tb_ptr.tb_frame)
-        tb_ptr = tb_ptr.tb_next
-    return frames
 
 class TestWindow(object):
     def __init__(self, screen, test_list, test_status, test, err,
@@ -189,8 +189,7 @@ class TestWindow(object):
 class TestModal(object):
     def __init__(self, screen, *args, **kwargs):
         self.screen = screen
-        # self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
-        self.window = curses.newpad(MAX_PAD_HEIGHT, 80)
+        self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
 
         self.test = None
         self.err = None
@@ -208,30 +207,33 @@ class TestModal(object):
         self.window.clear()
 
         # display traceback
-        context = 3
-        for i in range(len(self.frames)):
+        acc = 1
+        context = 5
+        for frame in self.frames:
             # get file failed in
-            filename = self.frames[i].f_code.co_filename
+            filename = frame.f_code.co_filename
+            if re.match(r'(^/usr/lib.*|.*/\.local/lib/.*)', filename):
+                context = 0
+            else:
+                context = 5
             self.window.bkgdset(ord(' '), curses.color_pair(1))
-            self.window.addstr(1 + i*(2+context*2), 1, filename[:size[0]-2])
+            self.window.addstr(acc, 0, filename[:size[0]-2])
             self.window.bkgdset(ord(' '), curses.color_pair(0))
             # get line of source code failed on
             f = open(filename)
             lines = f.readlines()
-            ln_from, ln_to = (self.frames[i].f_lineno-1 - context,
-                              self.frames[i].f_lineno-1 + context)
+            ln_from, ln_to = (frame.f_lineno - 1 - context, frame.f_lineno)
             ls = lines[ln_from:ln_to]
             if ln_from < 0:
-                ls += [''] * (-ln_from)
-            if ln_to > len(lines):
-                ls += [''] * (len(lines) - ln_to)
+                ls = [''] * (-ln_from) + ls
             f.close()
             # display lines + context
             for j in range(len(ls)):
                 l = ls[j]
-                self.window.addstr(2 + i*(2+context*2) + j, 1,
-                                   l.rstrip()[:size[0]])
-            self.window.addstr(2 + i*(2+context*2) + context, 0, '*')
+                self.window.addstr(acc + j + 1, 1, l.rstrip()[:size[0]])
+            if context:
+                self.window.addstr(acc + context + 1, 0, '*')
+            acc += 2 + context
 
         # display stdout
         if self.test.capturedOutput:
