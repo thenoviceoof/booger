@@ -105,6 +105,13 @@ class TestWindow(object):
         self.err = err
         self.y = 0
 
+        # get tb_frames
+        self.frames = []
+        frame = self.err[2]
+        while frame:
+            self.frames.append(frame)
+            frame = frame.tb_next
+
         super(TestWindow, self).__init__(*args, **kwargs)
 
     def update(self, y=None):
@@ -112,43 +119,50 @@ class TestWindow(object):
         We don't actually call refresh, since we expect the TestList
         to be a pad that needs to call refresh itself
         '''
+        # store the 
         if y is None:
             y = self.y
+        else:
+            self.y = y
+        traceback_lines = {True: 5, False: 1}[self.selected]
+        if traceback_lines > len(self.frames):
+            traceback_lines = len(self.frames)
+        lines = 3 + traceback_lines * 2
 
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         self.window.mvderwin(y, 0)
-        self.window.resize(TEST_WIN_HEIGHT, size[0])
+        self.window.resize(lines, size[0])
 
         self.window.clear()
         self.window.box()
 
         self.window.addstr(0, 5, str(self.test), curses.A_BOLD)
-        
+
         # display error (type, exception, traceback)
-        # get last tb_frame
-        frame = self.err[2]
-        while frame.tb_next:
-            frame = frame.tb_next
-        # get file failed in
-        filename = frame.tb_frame.f_code.co_filename
-        self.window.addstr(1, 1, filename[:size[0]-2])
-        # get line of source code failed on
-        f = open(filename)
-        line = f.readlines()[frame.tb_frame.f_lineno-1]
-        f.close()
-        self.window.addstr(2, 1, line.rstrip()[:size[0]])
+        for i in range(traceback_lines):
+            j = -traceback_lines+i
+            # get file failed in
+            filename = self.frames[j].tb_frame.f_code.co_filename
+            self.window.addstr(1 + i*2, 1, filename[:size[0]-2])
+            # get line of source code failed on
+            f = open(filename)
+            line = f.readlines()[self.frames[j].tb_frame.f_lineno-1]
+            f.close()
+            self.window.addstr(2 + i*2, 1, line.rstrip()[:size[0]])
         # display what and how
         exception_name = self.err[1].__class__.__name__
         err_str = '{0}: {1}'.format(exception_name,
                                     self.err[1].message)[:size[0]-2]
-        self.window.addstr(3, 1, err_str)
+        self.window.addstr(lines-2, 1, err_str)
 
-        return TEST_WIN_HEIGHT
+        return lines
 
     def select(self):
+        self.selected = True
         self.window.bkgdset(ord(' '), curses.color_pair(1))
         self.update()
     def deselect(self):
+        self.selected = False
         self.window.bkgdset(ord(' '), curses.color_pair(0))
         self.update()
 
