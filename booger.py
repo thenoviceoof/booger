@@ -195,6 +195,9 @@ class TestModal(object):
         self.frames = get_frames(self.err[2])
 
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        self.window.bkgdset(ord(' '), curses.color_pair(1))
+        self.window.addstr(0, 0, '_T_raceback')
+        self.window.bkgdset(ord(' '), curses.color_pair(0))
 
         # display traceback
         context = 3
@@ -202,18 +205,25 @@ class TestModal(object):
             # get file failed in
             filename = self.frames[i].f_code.co_filename
             self.window.bkgdset(ord(' '), curses.color_pair(1))
-            self.window.addstr(1 + i*(2+context*2), 1, filename[:size[0]-2])
+            self.window.addstr(2 + i*(2+context*2), 1, filename[:size[0]-2])
             self.window.bkgdset(ord(' '), curses.color_pair(0))
             # get line of source code failed on
             f = open(filename)
             lines = f.readlines()
-            ls = lines[self.frames[i].f_lineno-1 - context:
-                           self.frames[i].f_lineno-1 + context]
+            ln_from, ln_to = (self.frames[i].f_lineno-1 - context,
+                              self.frames[i].f_lineno-1 + context)
+            ls = lines[ln_from:ln_to]
+            if ln_from < 0:
+                ls += [''] * (-ln_from)
+            if ln_to > len(lines):
+                ls += [''] * (len(lines) - ln_to)
             f.close()
+            # display lines + context
             for j in range(len(ls)):
                 l = ls[j]
-                self.window.addstr(2 + i*(2+context*2) + j, 1,
+                self.window.addstr(3 + i*(2+context*2) + j, 1,
                                    l.rstrip()[:size[0]])
+            self.window.addstr(3 + i*(2+context*2) + context, 0, '*')
 
         self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
     def open(self, test, err):
