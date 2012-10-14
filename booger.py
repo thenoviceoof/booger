@@ -15,6 +15,7 @@ import Queue
 import curses
 import threading
 import exceptions
+from StringIO import StringIO
 
 from nose.plugins import Plugin
 
@@ -396,8 +397,20 @@ def curses_run(test_queue):
 # nose plugin
 
 class BoogerPlugin(Plugin):
+    '''
+    Something
+    '''
+    enabled = False
+    name = 'booger'
+    score = 3000
+
     def __init__(self, *args, **kwargs):
         super(BoogerPlugin, self).__init__(*args, **kwargs)
+
+        self.stdout = []
+        self.stderr = []
+        self.logging = []
+        self._buf = None
 
         self.test_queue = Queue.Queue()
         self.curses = threading.Thread(target=curses_run,
@@ -405,7 +418,27 @@ class BoogerPlugin(Plugin):
         self.curses.start()
 
     ############################################################################
-    # utils
+    # options
+    def options(self, parser, env):
+        '''
+        Register booger's commandline options
+        '''
+        parser.add_option(
+            '--booger', action = 'store_const',
+            default = False, const = True, dest = 'booger',
+            help = 'Display captured output in a curses interface')
+    def configure(self, options, conf):
+        self.conf = conf
+        self.enabled = options.booger
+
+    ############################################################################
+    # pre-post test
+    def begin(self):
+        pass
+    def beforeTest(self, test):
+        pass
+    def afterTest(self, test):
+        pass
 
     ############################################################################
     # test outcome handler
