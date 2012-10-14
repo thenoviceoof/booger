@@ -1,4 +1,5 @@
 import sys
+import time
 import logging
 
 log = logging.getLogger(__name__)
@@ -11,6 +12,12 @@ def test_test2():
 
 def test_test_test():
     assert True
+
+def test_test3():
+    assert False
+def test_test4():
+    time.sleep(1)
+    assert False
 
 def mu_test():
     print "BANG BANG"
