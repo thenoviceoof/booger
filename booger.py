@@ -67,7 +67,8 @@ class StatusBar(object):
         self.finished = False
 
         # make the curses object
-        self.window = curses.newpad(1, MAX_PAD_WIDTH)
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        self.window = curses.newwin(1, size[0])
         self.window.attrset(curses.A_BOLD)
         self.window.bkgdset(ord(' '), curses.color_pair(1))
         self.update()
@@ -86,7 +87,7 @@ class StatusBar(object):
         status_str = ' | '.join(status)
         self.window.addstr(0,0, status_str)
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
-        self.window.refresh(0,0, 0,0, 1,size[0]-1)
+        self.window.refresh()
 
     def add_test(self, test_type):
         self.test_counts[test_type] += 1
@@ -106,14 +107,15 @@ class TestList(object):
         self.window.clear()
         # sizing
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
-        acc = 1
+        acc = 0
         for w in self.window_list:
-            w.refresh(0,0, 1,0, 5,10)
+            w.mvderwin(acc, 0)
+            w.resize(5, size[0])
             w.box()
-            acc += 1
+            acc += TEST_WIN_HEIGHT
         self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
     def add_test(self, test):
-        win = self.window.subpad(20, MAX_PAD_WIDTH-1, 0,0)
+        win = self.window.subwin(1, 1, 0,0)
         self.window_list.append(win)
 
 def update_test_win(win, size, test, err):
