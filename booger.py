@@ -294,6 +294,7 @@ class TestList(object):
         self.modal = TestModal(screen)
 
         self.cur_test = None
+        self.scroll = 0
         self.dirty = True
 
         super(TestList, self).__init__(*args, **kwargs)
@@ -305,10 +306,18 @@ class TestList(object):
         self.window.clear()
         # sizing
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        scroll = 0
         acc = 0
         for w in self.window_list:
+            if w.selected:
+                scroll = acc
             acc += w.update(acc)
-        self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
+        # handle scrolling
+        if scroll > self.scroll + size[1] - 10:
+            self.scroll = scroll - size[1] + 10
+        elif scroll < self.scroll:
+            self.scroll = scroll
+        self.window.refresh(self.scroll,0, 1,0, size[1]-1, size[0]-1)
         self.dirty = False
     def add_test(self, test_status, test, err):
         tw = TestWindow(self.screen, self.window, test_status, test, err)
