@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 def test_test():
     for i in range(200):
         print "Mu! {0}".format(i)
+        print 'WHEE' * 100
     assert False
 def test_test2():
     assert really_long_name_for_a_variable_oh_boy_this_is_long_wheeeeeeeeeeeeeeee == YOUR_MOTHER_IS_A_NICE_LADY
