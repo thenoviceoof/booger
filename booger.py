@@ -267,10 +267,28 @@ class TestModal(object):
             if context:
                 self.window.addstr(acc, 0, '*')
             acc += 2
+        self.len = acc
     def update_stdout(self):
-        self.window.addstr(0, 0, self.test.capturedOutput)
+        lines = self.test.capturedOutput.split('\n')
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        acc = 0
+        for l in lines:
+            while l:
+                self.window.addstr(acc,0, l[:size[0]])
+                l = l[size[0]:]
+                acc += 1
+        self.len = acc
     def update_logging(self):
-        self.window.addstr(0, 0, '\n'.join(self.test.capturedLogging))
+        lines = self.test.capturedLogging
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        acc = 0
+        for l in lines:
+            while l:
+                self.window.addstr(acc,0, l[:size[0]])
+                l = l[size[0]:]
+                acc += 1
+        self.len = acc
+    # master update
     def update(self):
         if not self.opened:
             return
