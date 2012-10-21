@@ -20,15 +20,7 @@ from StringIO import StringIO
 from nose.plugins import Plugin
 
 ################################################################################
-# windowing stuff
-
-MAX_PAD_WIDTH = 300
-MAX_PAD_HEIGHT = 2000
-
-STATUS_BAR_RUNNING  = 'Tests Running...'
-STATUS_BAR_FINISHED = 'Tests Done!     '
-
-TEST_WIN_HEIGHT = 5
+# utils
 
 def get_new_tests(queue):
     '''
@@ -57,13 +49,25 @@ def get_new_tests(queue):
             return tests, True
 
 def get_frames(tb_ptr):
-    # get tb_frames
+    '''
+    Gets tb_frames out of the dumb linked list format, into python lists
+    '''
     frames = []
     while tb_ptr:
         frames.append(tb_ptr.tb_frame)
         tb_ptr = tb_ptr.tb_next
     return frames
 
+################################################################################
+# windowing stuff
+
+MAX_PAD_WIDTH = 300
+MAX_PAD_HEIGHT = 2000
+
+STATUS_BAR_RUNNING  = 'Tests Running...'
+STATUS_BAR_FINISHED = 'Tests Done!     '
+
+TEST_WIN_HEIGHT = 5
 
 class StatusBar(object):
     def __init__(self, screen, *args, **kwargs):
