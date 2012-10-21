@@ -317,6 +317,14 @@ class TestList(object):
             self.scroll = scroll - size[1] + 10
         elif scroll < self.scroll:
             self.scroll = scroll
+        # draw the scroll bar
+        if acc > size[1]:
+            for i in range(size[1]-1):
+                self.window.addstr(self.scroll+i,size[0]-1, '|')
+            total = acc - (size[1]-1)
+            d = int((float(self.scroll) / total) * (size[1] - 2))
+            self.window.addstr(self.scroll+d, size[0]-1, '#', curses.A_BOLD)
+        # and then do the refresh
         self.window.refresh(self.scroll,0, 1,0, size[1]-1, size[0]-1)
         self.dirty = False
     def add_test(self, test_status, test, err):
