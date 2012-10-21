@@ -12,8 +12,11 @@ def test_test():
 def test_test2():
     assert really_long_name_for_a_variable_oh_boy_this_is_long_wheeeeeeeeeeeeeeee == YOUR_MOTHER_IS_A_NICE_LADY
 
-def test_test_test():
+def test():
     assert True
+
+def test_test_test_test_test_test_test_test_test_test_test_test_test_test_test():
+    assert False
 
 def test_test3():
     assert False
