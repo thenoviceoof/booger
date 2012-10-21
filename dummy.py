@@ -6,6 +6,8 @@ log = logging.getLogger(__name__)
 
 # test cases
 def test_test():
+    for i in range(200):
+        print "Mu! {0}".format(i)
     assert False
 def test_test2():
     assert False
