@@ -294,10 +294,14 @@ class TestList(object):
         self.modal = TestModal(screen)
 
         self.cur_test = None
+        self.dirty = True
 
         super(TestList, self).__init__(*args, **kwargs)
 
     def update(self):
+        if not self.dirty:
+            return
+        # !! try not clearing the entire list
         self.window.clear()
         # sizing
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
@@ -305,6 +309,7 @@ class TestList(object):
         for w in self.window_list:
             acc += w.update(acc)
         self.window.refresh(0,0, 1,0, size[1]-2, size[0]-1)
+        self.dirty = False
     def add_test(self, test_status, test, err):
         tw = TestWindow(self.screen, self.window, test_status, test, err)
         self.window_list.append(tw)
@@ -327,11 +332,13 @@ class TestList(object):
             self.cur_test %= len(self.window_list)
 
         self.window_list[self.cur_test].select()
+        self.dirty = True
 
     def open_modal(self):
         if self.cur_test is not None:
             win = self.window_list[self.cur_test]
             self.modal.open(win.test, win.err)
+        self.dirty = True
 
 
 # handle book keeping (update areas that need updating)
@@ -417,6 +424,7 @@ class TestsGUI(object):
 
         if test_type != 'ok':
             self.test_list.add_test(test_type, test, err)
+        self.test_list.dirty = True
     def finish(self):
         self.status_bar.finish()
 
