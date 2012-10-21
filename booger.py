@@ -160,7 +160,7 @@ class TestWindow(object):
             f = open(filename)
             line = f.readlines()[self.frames[j].f_lineno-1]
             f.close()
-            self.window.addstr(2 + i*2, 1, line.rstrip()[:size[0]])
+            self.window.addstr(2 + i*2, 1, line.rstrip()[:size[0]-2])
         # display what and how
         exception = self.test.exception
         exception_name = exception.__class__.__name__
