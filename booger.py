@@ -255,11 +255,18 @@ class TestModal(object):
             f.close()
             # display lines + context
             for j in range(len(ls)):
-                l = ls[j]
-                self.window.addstr(acc + j + 1, 1, l.rstrip()[:size[0]])
+                l = ls[j].rstrip()
+                i = 0
+                while l:
+                    self.window.addstr(acc + i + 1, 1, l[:size[0]-1])
+                    if i > 0:
+                        self.window.addstr(acc + i + 1, 0, '>')
+                    l = l[size[0]-1:]
+                    i += 1
+                acc += i
             if context:
-                self.window.addstr(acc + context + 1, 0, '*')
-            acc += 2 + context
+                self.window.addstr(acc, 0, '*')
+            acc += 2
     def update_stdout(self):
         self.window.addstr(0, 0, self.test.capturedOutput)
     def update_logging(self):
