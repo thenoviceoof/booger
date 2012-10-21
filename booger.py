@@ -146,8 +146,9 @@ class TestWindow(object):
         self.window.clear()
         self.window.box()
 
-        self.window.addstr(0, 2, ' %s ' % self.test_status[0].upper(), curses.A_BOLD)
-        self.window.addstr(0, 7, str(self.test), curses.A_BOLD)
+        self.window.addstr(0, 2, ' %s ' % self.test_status[0].upper(),
+                           curses.A_BOLD)
+        self.window.addstr(0, 7, str(self.test)[:size[0]-8], curses.A_BOLD)
 
         # display error (type, exception, traceback)
         for i in range(traceback_lines):
