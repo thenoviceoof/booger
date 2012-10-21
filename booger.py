@@ -209,6 +209,10 @@ class TestModal(object):
 
         self.opened = False
 
+        self._scroll = 0
+        self.len = 0
+
+    # mode switching
     def traceback(self):
         self.type = 'traceback'
         self.update()
@@ -227,7 +231,8 @@ class TestModal(object):
             return True
         else:
             return False
-        
+
+    # update modes
     def update_traceback(self):
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         self.frames = get_frames(self.err[2])
@@ -238,6 +243,7 @@ class TestModal(object):
         for frame in self.frames:
             # get file failed in
             filename = frame.f_code.co_filename
+            # display less context for libraries
             if re.match(r'(^/usr/lib.*|.*/\.local/lib/.*)', filename):
                 context = 0
             else:
@@ -258,7 +264,7 @@ class TestModal(object):
                 l = ls[j].rstrip()
                 i = 0
                 while l:
-                    self.window.addstr(acc + i + 1, 1, l[:size[0]-1])
+                    self.window.addstr(acc + i + 1, 1, l[:size[0]-2])
                     if i > 0:
                         self.window.addstr(acc + i + 1, 0, '>')
                     l = l[size[0]-1:]
@@ -274,8 +280,8 @@ class TestModal(object):
         acc = 0
         for l in lines:
             while l:
-                self.window.addstr(acc,0, l[:size[0]])
-                l = l[size[0]:]
+                self.window.addstr(acc,0, l[:size[0]-1])
+                l = l[size[0]-1:]
                 acc += 1
         self.len = acc
     def update_logging(self):
@@ -284,8 +290,8 @@ class TestModal(object):
         acc = 0
         for l in lines:
             while l:
-                self.window.addstr(acc,0, l[:size[0]])
-                l = l[size[0]:]
+                self.window.addstr(acc,0, l[:size[0]-1])
+                l = l[size[0]-1:]
                 acc += 1
         self.len = acc
     # master update
@@ -303,8 +309,23 @@ class TestModal(object):
         elif self.type == 'logging':
             self.update_logging()
 
-        self.window.refresh(0,0, 0,0, size[1]-1, size[0]-1)
+        # draw the scroll bar
+        if self.len > size[1]:
+            for i in range(size[1]):
+                self.window.addstr(self._scroll + i,size[0]-1, '|')
+            total = self.len - (size[1] - 1)
+            d = int((float(self._scroll) / total) * (size[1]-1))
+            self.window.addstr(self._scroll+d, size[0]-1, '#', curses.A_BOLD)
+
+        self.window.refresh(self._scroll,0, 0,0, size[1]-1, size[0]-1)
+
+    # movement
+    def scroll(self, n=1):
+        self._scroll += n
+
+    # open/closing
     def open(self, test, err):
+        self._scroll = 0
         self.test = test
         self.err = err
         self.opened = True
@@ -439,9 +460,13 @@ class TestsGUI(object):
     def next(self, n=1):
         if self.state == 'list':
             self.test_list.move_list(n)
+        else:
+            self.test_list.modal.scroll()
     def prev(self, n=1):
         if self.state == 'list':
             self.test_list.move_list(-n)
+        else:
+            self.test_list.modal.scroll(-1)
 
     # handle modality
     def modal_traceback(self):
