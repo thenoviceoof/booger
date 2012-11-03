@@ -58,6 +58,12 @@ def get_frames(tb_ptr):
         tb_ptr = tb_ptr.tb_next
     return frames
 
+def get_size(screen):
+    '''
+    Returns a tuple (cols, rows)
+    '''
+    return screen.getmaxyx()[1], screen.getmaxyx()[0]
+
 ################################################################################
 # windowing stuff
 
@@ -80,7 +86,7 @@ class StatusBar(object):
         self.finished = False
 
         # make the curses object
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self.window = curses.newwin(1, size[0])
         self.window.attrset(curses.A_BOLD)
         self.window.bkgdset(ord(' '), curses.color_pair(1))
@@ -99,7 +105,7 @@ class StatusBar(object):
                    for x in ['ok', 'error', 'fail']]
         status_str = ' | '.join(status)
         self.window.addstr(0,0, status_str)
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self.window.refresh()
 
     def add_test(self, test_type):
@@ -139,7 +145,7 @@ class TestWindow(object):
             traceback_lines = len(self.frames)
         lines = 3 + traceback_lines * 2
 
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self.window.mvderwin(y, 0)
         self.window.resize(lines, size[0])
 
@@ -234,7 +240,7 @@ class TestModal(object):
 
     # update modes
     def update_traceback(self):
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self.frames = get_frames(self.err[2])
 
         # display traceback
@@ -276,7 +282,7 @@ class TestModal(object):
         self.len = acc
     def update_stdout(self):
         lines = self.test.capturedOutput.split('\n')
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         acc = 0
         for l in lines:
             while l:
@@ -286,7 +292,7 @@ class TestModal(object):
         self.len = acc
     def update_logging(self):
         lines = self.test.capturedLogging
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         acc = 0
         for l in lines:
             while l:
@@ -299,7 +305,7 @@ class TestModal(object):
         if not self.opened:
             return
 
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self.window.clear()
 
         if self.type == 'traceback':
@@ -321,7 +327,7 @@ class TestModal(object):
 
     # movement
     def scroll(self, n=1):
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         self._scroll += n
         self._scroll %= self.len - (size[1] - 1)
     def start(self):
@@ -359,7 +365,7 @@ class TestList(object):
         # !! try not clearing the entire list
         self.window.clear()
         # sizing
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         scroll = 0
         acc = 0
         for w in self.window_list:
@@ -439,7 +445,7 @@ class TestsGUI(object):
         '''
         Return value: False if we are to close
         '''
-        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
+        size = get_size(self.screen)
         if c == ord('q'):
             if self.state == 'list':
                 return False
