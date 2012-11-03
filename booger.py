@@ -450,8 +450,8 @@ class TestsGUI(object):
 
     # draw things
     def update(self):
-        self.status_bar.update()
         if self.state == 'list':
+            self.status_bar.update()
             self.test_list.update()
         else:
             self.test_list.modal.update()
