@@ -324,6 +324,11 @@ class TestModal(object):
         size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         self._scroll += n
         self._scroll %= self.len - (size[1] - 1)
+    def start(self):
+        self._scroll = 0
+    def end(self):
+        self._scroll = 0
+        self.scroll(-1)
 
     # open/closing
     def open(self, test, err):
@@ -399,6 +404,11 @@ class TestList(object):
 
         self.window_list[self.cur_test].select()
         self.dirty = True
+    def start(self):
+        self.cur_test = 0
+    def end(self):
+        self.cur_test = 0
+        self.move_list(-1)
 
     def open_modal(self):
         if self.cur_test is not None:
@@ -446,6 +456,10 @@ class TestsGUI(object):
             self.next(size[1])
         elif c == curses.KEY_PPAGE:
             self.prev(size[1])
+        elif c == curses.KEY_HOME:
+            self.start()
+        elif c == curses.KEY_END:
+            self.end()
         elif c in [curses.KEY_ENTER, ord('\n')]:
             # used to be the key to bringing up the modal
             pass
@@ -480,6 +494,16 @@ class TestsGUI(object):
             self.test_list.move_list(-n)
         else:
             self.test_list.modal.scroll(-n)
+    def start(self):
+        if self.state == 'list':
+            self.test_list.start()
+        else:
+            self.test_list.modal.start()
+    def end(self):
+        if self.state == 'list':
+            self.test_list.end()
+        else:
+            self.test_list.modal.end()
 
     # handle modality
     def modal_traceback(self):
