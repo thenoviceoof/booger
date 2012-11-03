@@ -15,6 +15,7 @@ import Queue
 import curses
 import threading
 import exceptions
+import curses.textpad
 from StringIO import StringIO
 
 from nose.plugins import Plugin
@@ -217,6 +218,7 @@ class TestModal(object):
 
         self._scroll = 0
         self.len = 0
+        self.contents = []
 
     # mode switching
     def traceback(self):
@@ -240,6 +242,8 @@ class TestModal(object):
 
     # update modes
     def update_traceback(self):
+        self.contents = []
+
         size = get_size(self.screen)
         self.frames = get_frames(self.err[2])
 
@@ -270,6 +274,7 @@ class TestModal(object):
                 l = ls[j].rstrip()
                 i = 0
                 while l:
+                    self.contents.append(l[:size[0]-2])
                     self.window.addstr(acc + i + 1, 1, l[:size[0]-2])
                     if i > 0:
                         self.window.addstr(acc + i + 1, 0, '>')
@@ -281,21 +286,27 @@ class TestModal(object):
             acc += 2
         self.len = acc
     def update_stdout(self):
+        self.contents = []
+
         lines = self.test.capturedOutput.split('\n')
         size = get_size(self.screen)
         acc = 0
         for l in lines:
             while l:
+                self.contents.append(l[:size[0]-1])
                 self.window.addstr(acc,0, l[:size[0]-1])
                 l = l[size[0]-1:]
                 acc += 1
         self.len = acc
     def update_logging(self):
+        self.contents = []
+
         lines = self.test.capturedLogging
         size = get_size(self.screen)
         acc = 0
         for l in lines:
             while l:
+                self.contents.append(l[:size[0]-1])
                 self.window.addstr(acc,0, l[:size[0]-1])
                 l = l[size[0]-1:]
                 acc += 1
@@ -335,6 +346,15 @@ class TestModal(object):
     def end(self):
         self._scroll = 0
         self.scroll(-1)
+
+    # search
+    def search(self, string):
+        if string:
+            string = string[:-1]
+        for i in range(self.len - self._scroll):
+            if string in self.contents[self._scroll + i + 1]:
+                self._scroll += i + 1
+                break
 
     # open/closing
     def open(self, test, err):
@@ -469,13 +489,17 @@ class TestsGUI(object):
         elif c in [curses.KEY_ENTER, ord('\n')]:
             # used to be the key to bringing up the modal
             pass
-        # modal hotkeys
+        # modal switching
         elif c in [ord('t'), ord('T')]:
             self.modal_traceback()
         elif c in [ord('o'), ord('O')]:
             self.modal_output()
         elif c in [ord('l'), ord('L')]:
             self.modal_logging()
+        # modal hotkeys
+        elif c == ord('/'):
+            if self.state != 'list':
+                self.search()
         # scaling
         elif c == curses.KEY_RESIZE:
             self.update()
@@ -527,6 +551,21 @@ class TestsGUI(object):
     def modal_close(self):
         self.test_list.modal.close()
         self.state = 'list'
+
+    # search
+    def search(self):
+        # make a search bar
+        size = get_size(self.screen)
+        search_cont = curses.newwin(2,size[0], size[1]-2,0)
+        search_line = search_cont.derwin(1,size[0]-1, 1,0)
+        search_bar = curses.textpad.Textbox(search_line)
+
+        # draw some window dressing
+        search_cont.addstr(0,0, '_' * (size[0]-1))
+        search_cont.refresh()
+        # editing
+        string = search_bar.edit()
+        self.test_list.modal.search(string)
 
     # test related things
     def add_test(self, test_type, test, err):
