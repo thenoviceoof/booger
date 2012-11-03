@@ -427,6 +427,7 @@ class TestsGUI(object):
         '''
         Return value: False if we are to close
         '''
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         if c == ord('q'):
             if self.state == 'list':
                 return False
@@ -439,6 +440,10 @@ class TestsGUI(object):
             self.next()
         elif c in [curses.KEY_UP, ord('p')]:
             self.prev()
+        elif c == curses.KEY_NPAGE:
+            self.next(size[1])
+        elif c == curses.KEY_PPAGE:
+            self.prev(size[1])
         elif c in [curses.KEY_ENTER, ord('\n')]:
             # used to be the key to bringing up the modal
             pass
@@ -467,12 +472,12 @@ class TestsGUI(object):
         if self.state == 'list':
             self.test_list.move_list(n)
         else:
-            self.test_list.modal.scroll()
+            self.test_list.modal.scroll(n)
     def prev(self, n=1):
         if self.state == 'list':
             self.test_list.move_list(-n)
         else:
-            self.test_list.modal.scroll(-1)
+            self.test_list.modal.scroll(-n)
 
     # handle modality
     def modal_traceback(self):
