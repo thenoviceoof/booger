@@ -424,6 +424,9 @@ class TestsGUI(object):
 
     # handle input
     def handle_input(self, c):
+        '''
+        Return value: False if we are to close
+        '''
         if c == ord('q'):
             if self.state == 'list':
                 return False
@@ -431,19 +434,22 @@ class TestsGUI(object):
                 self.state = 'list'
                 self.modal_close()
                 return True
+        # directional keys
         elif c in [curses.KEY_DOWN, ord('n')]:
             self.next()
         elif c in [curses.KEY_UP, ord('p')]:
             self.prev()
         elif c in [curses.KEY_ENTER, ord('\n')]:
+            # used to be the key to bringing up the modal
             pass
-            # self.toggle_modal()
+        # modal hotkeys
         elif c in [ord('t'), ord('T')]:
             self.modal_traceback()
         elif c in [ord('o'), ord('O')]:
             self.modal_output()
         elif c in [ord('l'), ord('L')]:
             self.modal_logging()
+        # scaling
         elif c == curses.KEY_RESIZE:
             self.update()
         return True
