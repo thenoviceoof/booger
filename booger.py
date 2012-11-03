@@ -321,7 +321,9 @@ class TestModal(object):
 
     # movement
     def scroll(self, n=1):
+        size = self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
         self._scroll += n
+        self._scroll %= self.len - (size[1] - 1)
 
     # open/closing
     def open(self, test, err):
