@@ -454,9 +454,9 @@ class TestsGUI(object):
                 self.modal_close()
                 return True
         # directional keys
-        elif c in [curses.KEY_DOWN, ord('n')]:
+        elif c in [curses.KEY_DOWN, ord('n')] or curses.unctrl(c) == '^N':
             self.next()
-        elif c in [curses.KEY_UP, ord('p')]:
+        elif c in [curses.KEY_UP, ord('p')] or curses.unctrl(c) == '^P':
             self.prev()
         elif c == curses.KEY_NPAGE:
             self.next(size[1])
