@@ -458,6 +458,8 @@ class TestsGUI(object):
         self.status_bar = StatusBar(screen)
         self.test_list = TestList(screen)
 
+        self.dirty = True
+
         super(TestsGUI, self).__init__()
 
     # handle input
@@ -466,6 +468,7 @@ class TestsGUI(object):
         Return value: False if we are to close
         '''
         size = get_size(self.screen)
+        self.dirty = True  # guilty until proven innocent
         if c == ord('q'):
             if self.state == 'list':
                 return False
@@ -503,6 +506,8 @@ class TestsGUI(object):
         # scaling
         elif c == curses.KEY_RESIZE:
             self.update()
+        else:
+            self.dirty = False
         return True
 
     # draw things
@@ -512,6 +517,7 @@ class TestsGUI(object):
             self.test_list.update()
         else:
             self.test_list.modal.update()
+        self.dirty = False
 
     # movement 
     def next(self, n=1):
@@ -574,6 +580,7 @@ class TestsGUI(object):
 
         if test_type != 'ok':
             self.test_list.add_test(test_type, test, err)
+        self.dirty = True
         self.test_list.dirty = True
     def finish(self):
         self.status_bar.finish()
@@ -608,7 +615,8 @@ def curses_main(scr, test_queue):
             if tests_done:
                 interface.finish()
 
-            interface.update()
+            if interface.dirty:
+                interface.update()
     except KeyboardInterrupt:
         return
 
