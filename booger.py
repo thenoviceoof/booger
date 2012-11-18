@@ -211,14 +211,19 @@ class TestModal(object):
         self.screen = screen
         self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
 
+        # pointers to the test/err currently being displayed
         self.test = None
         self.err = None
 
         self.opened = False
 
+        # gui detritus
         self._scroll = 0
         self.len = 0
         self.contents = []
+
+        # search specific things
+        self.search_term = None
 
     # mode switching
     def traceback(self):
@@ -294,7 +299,14 @@ class TestModal(object):
         for l in lines:
             while l:
                 self.contents.append(l[:size[0]-1])
-                self.window.addstr(acc,0, l[:size[0]-1])
+                line = l[:size[0]-1]
+                # abortive attempt at highlighting things
+                if self.search_term and self.search_term in line:
+                    self.window.bkgdset(ord(' '), curses.color_pair(1))
+                    self.window.addstr(acc,0, line)
+                    self.window.bkgdset(ord(' '), curses.color_pair(0))
+                else:
+                    self.window.addstr(acc,0, line)
                 l = l[size[0]-1:]
                 acc += 1
         self.len = acc
@@ -351,7 +363,9 @@ class TestModal(object):
     def search(self, string):
         if string:
             string = string[:-1]
-        for i in range(self.len - self._scroll):
+        # update the search term so we can highlight it
+        self.search_term = string
+        for i in range(self.len - self._scroll - 1):
             if string in self.contents[self._scroll + i + 1]:
                 self._scroll += i + 1
                 break
@@ -364,6 +378,8 @@ class TestModal(object):
         self.opened = True
     def close(self):
         self.opened = False
+        # stop searching
+        self.search_term = None
 
 class TestList(object):
     def __init__(self, screen, *args, **kwargs):
