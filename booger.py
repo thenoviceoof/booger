@@ -136,7 +136,7 @@ class TestWindow(object):
         We don't actually call refresh, since we expect the TestList
         to be a pad that needs to call refresh itself
         '''
-        # store the 
+        # store the current position
         if y is None:
             y = self.y
         else:
@@ -458,7 +458,9 @@ class TestsGUI(object):
         self.status_bar = StatusBar(screen)
         self.test_list = TestList(screen)
 
+        # for drawing in the main event loop
         self.dirty = True
+        self.test_list.dirty = True
 
         super(TestsGUI, self).__init__()
 
@@ -468,12 +470,14 @@ class TestsGUI(object):
         Return value: False if we are to close
         '''
         size = get_size(self.screen)
-        self.dirty = True  # guilty until proven innocent
+        handled = True  # guilty until proven innocent
         if c == ord('q'):
             if self.state == 'list':
                 return False
             else:
                 self.state = 'list'
+                # premature exit
+                self.dirty = True
                 self.modal_close()
                 return True
         # directional keys
@@ -503,15 +507,20 @@ class TestsGUI(object):
         elif c == ord('/'):
             if self.state != 'list':
                 self.search()
-        # scaling
+        # resizing
         elif c == curses.KEY_RESIZE:
+            self.test_list.dirty = True
             self.update()
         else:
-            self.dirty = False
+            handled = False
+        if handled:
+            self.dirty = True
         return True
 
     # draw things
     def update(self):
+        if not self.dirty:
+            return
         if self.state == 'list':
             self.status_bar.update()
             self.test_list.update()
@@ -522,21 +531,25 @@ class TestsGUI(object):
     # movement 
     def next(self, n=1):
         if self.state == 'list':
+            self.test_list.dirty = True
             self.test_list.move_list(n)
         else:
             self.test_list.modal.scroll(n)
     def prev(self, n=1):
         if self.state == 'list':
+            self.test_list.dirty = True
             self.test_list.move_list(-n)
         else:
             self.test_list.modal.scroll(-n)
     def start(self):
         if self.state == 'list':
+            self.test_list.dirty = True
             self.test_list.start()
         else:
             self.test_list.modal.start()
     def end(self):
         if self.state == 'list':
+            self.test_list.dirty = True
             self.test_list.end()
         else:
             self.test_list.modal.end()
@@ -583,6 +596,7 @@ class TestsGUI(object):
         self.dirty = True
         self.test_list.dirty = True
     def finish(self):
+        self.dirty = True
         self.status_bar.finish()
 
 def curses_main(scr, test_queue):
@@ -598,6 +612,7 @@ def curses_main(scr, test_queue):
 
     interface.update()
     tests_done = False
+    handle_tests = True
     try:
         while 1:
             # handle input
@@ -606,17 +621,18 @@ def curses_main(scr, test_queue):
                 return
 
             # handle any new tests
-            if not tests_done:
-                new_tests, tests_done = get_new_tests(test_queue)
-            if new_tests:
-                for stat, test, err in new_tests:
-                    interface.add_test(stat, test, err)
-                new_tests = []
-            if tests_done:
-                interface.finish()
+            if handle_tests:
+                if not tests_done:
+                    new_tests, tests_done = get_new_tests(test_queue)
+                if new_tests:
+                    for stat, test, err in new_tests:
+                        interface.add_test(stat, test, err)
+                    new_tests = []
+                if tests_done:
+                    handle_tests = False
+                    interface.finish()
 
-            if interface.dirty:
-                interface.update()
+            interface.update()
     except KeyboardInterrupt:
         return
 
