@@ -462,6 +462,9 @@ class TestsGUI(object):
         self.dirty = True
         self.test_list.dirty = True
 
+        # handle resizing
+        self.resize = False
+
         super(TestsGUI, self).__init__()
 
     # handle input
@@ -509,6 +512,8 @@ class TestsGUI(object):
                 self.search()
         # resizing
         elif c == curses.KEY_RESIZE:
+            self.dirty = True
+            self.resize = True
             self.test_list.dirty = True
             self.update()
         else:
@@ -519,6 +524,13 @@ class TestsGUI(object):
 
     # draw things
     def update(self):
+        # this is a hack to ensure a resize doesn't wipe out changes
+        if self.resize and not self.dirty:
+            self.dirty = True
+            if self.state == 'list':
+                self.test_list.dirty = True
+            self.dirty = True
+            self.resize = False
         if not self.dirty:
             return
         if self.state == 'list':
