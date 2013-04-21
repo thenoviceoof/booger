@@ -3,18 +3,25 @@ Master plan:
 
 MainWindow
  - Grid
-   - Window (status bar)
-   - WindowList (tests) (grid?)
-     - Window (tracebacks)
+   - Status Bar (TextWindow)
+   - Tests (Grid)
+     - Window (traceback borders)
+       - TextWindow (traceback text)
  * Modal(s)
-   - Traceback
-     - Grid
-       - WindowList (grid?)
-         - Window (Current traceback frame)
-       - Window (variables)
-   - Stdout
-   - Stderr
-   - Logging
+   - DetailModal
+     * Modals
+       - Traceback
+         - Grid
+           - Grid
+             - Window (Current traceback frame)
+           - Variables (TextWindow)
+       - TextStdout (TextWindow)
+       - TextStderr (TextWindow)
+       - TextLogging (TextWindow)
+   - SearchModal (Window)
+     (override the __init__ to create an edit)
+   - HelpModal
+     - TextWindow
 
 Break out for pdb
 '''
