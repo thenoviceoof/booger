@@ -97,4 +97,68 @@ class MainWindow(object):
     '''
     The root element, contains the event loop
     '''
-    def __init__(self)
+
+    def run(self):
+        '''
+        Starts executing the loop, taking advantage of python's curses wrapper
+        '''
+        curses.wrapper(self.start)
+
+    def start(self, screen):
+        '''
+        The method executed by the curses wrapper in run, should not
+        be overridden
+        '''
+        self.setup(screen)
+
+        try:
+            while 1:
+                loopp = self.loop(screen)
+                if loopp:
+                    break
+        except KeyboardInterrupt:
+            pass
+
+        self.cleanup(screen)
+
+    def loop(self, screen):
+        '''
+        Override this method to define the behavior on each loop,
+        which by default only mutates the with input and draws the
+        .child, if it exists
+
+        Returning a truth-y value from this method will exit the loop
+        '''
+        char = screen.getch()
+        self.input(char)
+        self.draw(screen)
+
+    def input(self, char):
+        if getattr(self, 'child_window', None):
+            self.child_window.input(char)
+    def draw(self, screen):
+        if getattr(self, 'child_window', None):
+            self.child_window.draw()
+
+    def setup(self, screen):
+        '''
+        Override this method to execute curses-related things before
+        entering the event loop
+        '''
+        # set up curses colors
+        curses.use_default_colors()
+        # wait for a character for 0.1s
+        curses.halfdelay(1)
+        # instantiate the child
+        if getattr(self, 'child', None):
+            self.child_window = self.child()
+
+    def cleanup(self, screen):
+        '''
+        Override this method to execute curses-related things after
+        exiting the event loop
+        '''
+        pass
+
+w = MainWindow()
+w.run()
