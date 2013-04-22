@@ -11,6 +11,7 @@ MAX_PAD_HEIGHT = 2000
 ################################################################################
 # what it SHOULD look like
 
+'''
 class TestItem(Window):
     child = TestItemTraceback
 
@@ -19,17 +20,17 @@ class TestItem(Window):
         super().__init__()
 
     def chrome(self):
-        '''draw some chrome'''
+        'draw some chrome'
         add_str
 
 class TestList(Grid):
     direction = 'vertical'
-    childern = [] # display an empty list
+    children = [] # display an empty list
 
 class Statusbar(TextWindow):
     style = ngui.highlight
     def draw(self):
-        self.contents = generate some text
+        self.contents = "generate some text"
         super().draw()
 
 class Main(Grid):
@@ -39,18 +40,19 @@ class Main(Grid):
     children = [Statusbar, TestList]
     # maybe this should be a named tuple, then we can do:
     relative_sizes = {
-        'status': 0.3
-        'test': 0.7
+        'status': 0.3,
+        'test': 0.7,
         }
 
 class GUI(MainWindow):
     child = Main
-    modals = {''; TracebackModal,
+    modals = {'': TracebackModal,
               'search': SearchModal}
 
     def loop(self):
         # handle test queue here, add tests here
         super().loop()
+'''
 
 ################################################################################
 
