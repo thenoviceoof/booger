@@ -134,10 +134,10 @@ class MainWindow(object):
         self.draw(screen)
 
     def input(self, char):
-        if getattr(self, 'child_window', None):
+        if hasattr(self, 'child_window'):
             self.child_window.input(char)
     def draw(self, screen):
-        if getattr(self, 'child_window', None):
+        if hasattr(self, 'child_window'):
             self.child_window.draw()
 
     def setup(self, screen):
@@ -149,8 +149,9 @@ class MainWindow(object):
         curses.use_default_colors()
         # wait for a character for 0.1s
         curses.halfdelay(1)
+        self.child = TextWindow()
         # instantiate the child
-        if getattr(self, 'child', None):
+        if hasattr(self, 'child'):
             self.child_window = self.child()
 
     def cleanup(self, screen):
