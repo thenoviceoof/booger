@@ -89,8 +89,8 @@ class Application(object):
     def render(self):
         size = self.get_size()
         results = self.current_window.render(size)
-        for line in results:
-            self.screen.addstr(0,0, line)
+        for i,line in enumerate(results):
+            self.screen.addstr(i,0, line)
 
     def handle(self, key):
         if key == 'q':
@@ -125,12 +125,15 @@ class TextBox(Window):
 
     def render(self, size=None):
         text = self.text
+        texts = text.split('\n')
         if len(size) > 1:
             w,h = size
         else:
             w,h = size[0], None
         lines = []
-        while text and (len(lines) < h if h else True):
-            lines.append(text[:w])
-            text = text[w:]
+        while texts and (len(lines) < h if h else True):
+            lines.append(texts[0][:w])
+            texts[0] = texts[0][w:]
+            if not texts[0]:
+                texts.pop(0)
         return lines
