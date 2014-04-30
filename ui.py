@@ -48,7 +48,7 @@ class Application(object):
     def run(self):
         curses.wrapper(self.run_curses)
 
-    def run_curses(self):
+    def run_curses(self, screen):
         pass
 
 class Window(object):
