@@ -4,7 +4,7 @@ from ui import *
 # example usage
 
 class App(Application):
-    windows = {'default': TextBox('hello world\nglad you could swing by')}
+    windows = {'default': Box(Text('hello world\nglad you could swing by'), title_parts=[' thing ', ' another '])}
 
     def handle(self, key):
         if key == 'a':
