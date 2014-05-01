@@ -4,9 +4,21 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 
 ################################################################################
-# utilities
+# constants
 
 ELLIPSE = u'\u2026'
+
+# attributes
+# why not bits? better tooling around strings
+ATTRIBUTES = {
+    'B': curses.A_BOLD,
+    'S': curses.A_STANDOUT,
+    'U': curses.A_UNDERLINE,
+    'R': curses.A_REVERSE,  # reverse the colors
+}
+
+################################################################################
+# utilities
 
 class Exit(Exception):
     pass
@@ -22,6 +34,8 @@ class Application(object):
     screen = None
     window = None
 
+    colors = [('black', 'white')]
+
     def run(self):
         curses.wrapper(self.run_curses)
 
@@ -32,7 +46,13 @@ class Application(object):
         # set up curses colors
         curses.use_default_colors()
         curses.curs_set(0)
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        assert len(self.colors) <= 4, 'Too many colors defined'
+        assert len(self.colors) > 0, 'Not enough colors defined'
+        for i,c in enumerate(self.colors):
+            background = getattr(curses, 'COLOR_' + c[0].upper())
+            foreground = getattr(curses, 'COLOR_' + c[1].upper())
+            curses.init_pair(i, background, foreground)
+
         # wait for a character for only 0.1s
         curses.halfdelay(1)
 
@@ -58,9 +78,28 @@ class Application(object):
 
     def render(self):
         size = self.get_size()
-        results = self.current_window.render(size)
-        for i,line in enumerate(results):
-            self.screen.addstr(i,0, line.encode('utf8'))
+        rlines, rstyles = self.current_window.render(size)
+        for i,res in enumerate(zip(rlines, rstyles)):
+            line, style = res
+            # apply styles, if any
+            style_ranges = []
+            current = None
+            current_start = None
+            for j,s in enumerate(style):
+                if s != current:
+                    if current_start:
+                        style_ranges.append((current, current_start, j))
+                    current_start = j
+                    current = s
+            style_ranges.append((current, current_start, j+1))
+            # output the strings with the right styles
+            for style, start, end in style_ranges:
+                style_attr = 0
+                for char in style:
+                    style_attr |= ATTRIBUTES.get(char)
+                self.screen.addstr(i, start,
+                                   line[start:end].encode('utf8'),
+                                   style_attr)
 
     def handle(self, key):
         if key == 'q':
@@ -87,16 +126,20 @@ class Box(Window):
 
     def render(self, size):
         w,h = size
-        results = self.window.render((max(w-2,0), max(h-2,0) if h else h))
+        rlines, rstyles = self.window.render((max(w-2,0),
+                                              max(h-2,0) if h else h))
         # make decorative lines
         top_line = self.render_inset(self.title_parts, w-2)
         bot_line = self.render_inset(self.option_parts, w-2, align='right')
         top_line = u'\u250c' + top_line + u'\u2510'
         bot_line = u'\u2514' + bot_line + u'\u2518'
         # wrap content
-        lines = [(u'\u2502' + line + u'\u2502') for line in results]
+        lines = [(u'\u2502' + line + u'\u2502') for line in rlines]
         lines = [top_line] + lines + [bot_line]
-        return lines
+        # wrap up styles
+        styles = [[''] + line + [''] for line in rstyles]
+        styles = [['' for i in range(w)]] + styles + [['' for i in range(w)]]
+        return lines, styles
 
     def render_inset(self, parts, width, align='left'):
         spacer = u'\u2500' * self.spacing
@@ -133,15 +176,6 @@ class List(Window):
 
 ################################################################################
 
-class StatusBar(Window):
-    parts = []
-
-    def __init__(self, parts):
-        self.parts = parts
-
-    def render(self, size):
-        pass
-
 class Text(Window):
     text = ''
 
@@ -160,4 +194,6 @@ class Text(Window):
                 texts.pop(0)
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
-        return lines
+        # pad out styles
+        styles = [['' for j in range(w)] for i in range(len(lines))]
+        return lines, styles
