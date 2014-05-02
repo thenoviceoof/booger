@@ -184,9 +184,11 @@ class List(Window):
 
 class Text(Window):
     text = ''
+    style = ''
 
-    def __init__(self, text):
+    def __init__(self, text, style=''):
         self.text = text
+        self.style = style
 
     def render(self, size):
         text = self.text
@@ -201,13 +203,16 @@ class Text(Window):
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
         # pad out styles
-        styles = [[('', 0, w)] for i in range(len(lines))]
+        styles = [[(self.style, 0, w)] for i in range(len(lines))]
         return lines, styles
 
 class TextNoWrap(Window):
     text = ''
-    def __init__(self, text):
+    style = ''
+
+    def __init__(self, text, style=''):
         self.text = text
+        self.style = style
 
     def render(self, size):
         text = self.text
@@ -224,5 +229,5 @@ class TextNoWrap(Window):
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
         # pad out styles
-        styles = [[('', 0, w)] for i in range(len(lines))]
+        styles = [[(self.style, 0, w)] for i in range(len(lines))]
         return lines, styles
