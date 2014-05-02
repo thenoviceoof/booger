@@ -203,3 +203,26 @@ class Text(Window):
         # pad out styles
         styles = [[('', 0, w)] for i in range(len(lines))]
         return lines, styles
+
+class TextNoWrap(Window):
+    text = ''
+    def __init__(self, text):
+        self.text = text
+
+    def render(self, size):
+        text = self.text
+        texts = text.split('\n')
+        w,h = size
+        lines = []
+        while texts and (len(lines) < h if h else True):
+            if len(texts[0]) > w:
+                lines.append(texts[0][:w-1] + ELLIPSE)
+            else:
+                lines.append(texts[0])
+            if not texts[0]:
+                texts.pop(0)
+        # pad everything out
+        lines = [line + ' ' * (w - len(line)) for line in lines]
+        # pad out styles
+        styles = [[('', 0, w)] for i in range(len(lines))]
+        return lines, styles
