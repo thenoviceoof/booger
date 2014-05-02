@@ -171,11 +171,8 @@ class Box(Window):
 
 class VerticalPile(Window):
     windows = []
-    style = ''
 
-    def __init__(self, *args, **kwargs):
-        if kwargs.get('style'):
-            self.style = kwargs.get('style')
+    def __init__(self, *args):
         self.windows = args
 
     def render(self, size):
