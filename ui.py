@@ -242,8 +242,7 @@ class TextNoWrap(Window):
                 lines.append(texts[0][:w-1] + ELLIPSE)
             else:
                 lines.append(texts[0])
-            if not texts[0]:
-                texts.pop(0)
+            texts.pop(0)
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
         # pad out styles

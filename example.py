@@ -3,11 +3,11 @@ from ui import *
 ################################################################################
 # example usage
 
-txt1 = Text('hello world 1')
-txt2 = Text('hello world 2')
+txt1 = Text(('hello world 1\n' * 2)[:-1])
+txt2 = TextNoWrap(((('hello world 2 ' * 10) + '\n') * 10)[:-1])
 b1 = Box(txt1, title_parts=[' plack ', ' dag '], option_parts=[' blah '])
 b2 = Box(txt2, title_parts=[' doop '], option_parts=[' example ', ' auh '])
-p = VerticalPile(b1, b2, b2)
+p = VerticalPile(b1, b2)
 
 class App(Application):
     windows = {'default': p}
