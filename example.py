@@ -3,8 +3,14 @@ from ui import *
 ################################################################################
 # example usage
 
+txt1 = Text('hello world 1')
+txt2 = Text('hello world 2')
+b1 = Box(txt1, title_parts=[' plack ', ' dag '], option_parts=[' blah '])
+b2 = Box(txt2, title_parts=[' doop '], option_parts=[' example ', ' auh '])
+p = VerticalPile(b1, b2, b2)
+
 class App(Application):
-    windows = {'default': Box(Text('hello world\nglad you could swing by'), title_parts=[' thing ', ' another '], option_parts=[' thing '])}
+    windows = {'default': p}
 
     def handle(self, key):
         if key == 'a':
