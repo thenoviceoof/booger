@@ -114,8 +114,7 @@ class Application(object):
 ################################################################################
 
 class Window(object):
-    def render(self):
-        pass
+    pass
 
 class Box(Window):
     title_parts = []
@@ -171,8 +170,27 @@ class Box(Window):
         return accum
 
 class VerticalPile(Window):
+    windows = []
+    style = ''
+
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('style'):
+            self.style = kwargs.get('style')
+        self.windows = args
+
     def render(self, size):
-        pass
+        w,h = size
+        lines = []
+        styles = []
+        for win in self.windows:
+            wlines, wstyles = win.render((w,None))
+            lines.extend(wlines)
+            styles.extend(wstyles)
+            if len(lines) > h:
+                lines = lines[:h]
+                styles = styles[:h]
+                break
+        return lines, styles
 
 class HorizontalPile(Window):
     pass
