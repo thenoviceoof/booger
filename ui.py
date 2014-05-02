@@ -17,11 +17,15 @@ ATTRIBUTES = {
     'R': curses.A_REVERSE,  # reverse the colors
 }
 
+class Exit(Exception):
+    pass
+
 ################################################################################
 # utilities
 
-class Exit(Exception):
-    pass
+def log(stuff):
+    f = open('log', 'a')
+    print >>f, stuff
 
 ################################################################################
 # class hierarchy
