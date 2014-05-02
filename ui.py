@@ -78,14 +78,20 @@ class Application(object):
 
     def render(self):
         size = self.get_size()
+        w,h = size
         rlines, rstyles = self.current_window.render(size)
         for i,res in enumerate(zip(rlines, rstyles)):
-            line, style = res
-            # apply styles, if any
+            line, styles = res
+            # convert to a unified representation
+            style_chars = ['' for j in range(w)]
+            for style, start, end in styles:
+                for j in range(start, end):
+                    style_chars[j] += style
+            # convert back to ranges
             style_ranges = []
             current = None
             current_start = None
-            for j,s in enumerate(style):
+            for j,s in enumerate(style_chars):
                 if s != current:
                     if current_start:
                         style_ranges.append((current, current_start, j))
@@ -137,8 +143,8 @@ class Box(Window):
         lines = [(u'\u2502' + line + u'\u2502') for line in rlines]
         lines = [top_line] + lines + [bot_line]
         # wrap up styles
-        styles = [[''] + line + [''] for line in rstyles]
-        styles = [['' for i in range(w)]] + styles + [['' for i in range(w)]]
+        styles = [[(s[0], s[1]+1, s[2]+1) for s in line] for line in rstyles]
+        styles = [[]] + styles + [[]]
         return lines, styles
 
     def render_inset(self, parts, width, align='left'):
@@ -195,5 +201,5 @@ class Text(Window):
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
         # pad out styles
-        styles = [['' for j in range(w)] for i in range(len(lines))]
+        styles = [[('', 0, w)] for i in range(len(lines))]
         return lines, styles
