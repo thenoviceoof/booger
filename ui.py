@@ -189,9 +189,11 @@ class Box(Window):
 
 class VerticalPile(Window):
     windows = []
+    current_window = None
 
     def __init__(self, *args):
         self.windows = args
+        self.current_window = args[0]
 
     def render(self, size):
         w,h = size
@@ -207,11 +209,64 @@ class VerticalPile(Window):
                 break
         return lines, styles
 
+    def handle(self, key):
+        # don't do anything interesting with the signal
+        signal = self.current_window.handle(key)
+        return signal
+
 class HorizontalPile(Window):
     pass
 
 class List(Window):
-    pass
+    windows = []
+    current_window = None
+    _index = 0
+
+    def __init__(self, *args):
+        self.windows = args
+        self.current_window = args[self._index]
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, index):
+        # do bounds checking
+        if index >= len(self.windows):
+            index = len(self.windows) - 1
+        if index < 0:
+            index = 0
+        self._index = index
+        self.current_window = self.windows[index]
+
+    def render(self, size):
+        w,h = size
+        lines = []
+        styles = []
+        log('')
+        for win in self.windows:
+            wlines, wstyles = win.render((w,None))
+            if win is self.current_window:
+                wstyles = [s + [('R', 0, w)] for s in wstyles]
+            lines.extend(wlines)
+            styles.extend(wstyles)
+            if h and len(lines) > h:
+                lines = lines[:h]
+                styles = styles[:h]
+                break
+        #! draw a persistent scroll bar
+        return lines, styles
+
+    def handle(self, key):
+        signal = self.current_window.handle(key)
+        if signal is None:
+            if key == 'n':
+                self.index += 1
+            if key == 'p':
+                self.index -= 1
+            if key in 'np':
+                return 'redraw'
 
 ################################################################################
 
