@@ -81,6 +81,7 @@ class Application(object):
         return self.screen.getmaxyx()[1], self.screen.getmaxyx()[0]
 
     def render(self):
+        self.screen.clear()
         size = self.get_size()
         w,h = size
         rlines, rstyles = self.current_window.render(size)
@@ -115,10 +116,17 @@ class Application(object):
                 except curses.error as e:
                     if i < h - 1 and end == w:
                         raise e
+        self.screen.refresh()
 
     def handle(self, key):
-        if key == 'q':
-            raise Exit
+        # see if the application needs to run it's own handler
+        signal = self.current_window.handle(key)
+        if signal is None:
+            # default behavior is to just quit
+            if key == 'q':
+                raise Exit
+        elif signal == 'redraw':
+            self.render()
 
 ################################################################################
 
