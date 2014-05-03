@@ -131,7 +131,8 @@ class Application(object):
 ################################################################################
 
 class Window(object):
-    pass
+    def handle(self, key):
+        return
 
 class Box(Window):
     title_parts = []
