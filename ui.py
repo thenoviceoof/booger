@@ -254,6 +254,7 @@ class List(Window):
                 return lines, styles
         # draw a persistent scroll bar
         lines = [l + '|' for l in lines]
+        percentage_scrolled = float(current_row) / (len(lines))
         # do current bounds checking
         if current_end > self.scroll + h:
             self.scroll = current_end - h
@@ -262,6 +263,10 @@ class List(Window):
         # slice the right lines
         lines = lines[self.scroll:self.scroll + h]
         styles = styles[self.scroll:self.scroll + h]
+        # place the scroll bar in the right place
+        location = int(len(lines) * percentage_scrolled)
+        lines[location] = lines[location][:-1] + '#'
+
         return lines, styles
 
     def render_list(self, size):
