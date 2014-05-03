@@ -200,7 +200,7 @@ class VerticalPile(Window):
         lines = []
         styles = []
         for win in self.windows:
-            wlines, wstyles = win.render((w,None))
+            wlines, wstyles = win.render((w,h-len(lines)))
             lines.extend(wlines)
             styles.extend(wstyles)
             if len(lines) > h:
@@ -220,7 +220,10 @@ class HorizontalPile(Window):
 class List(Window):
     windows = []
     current_window = None
+    # which window is current
     _index = 0
+    # how far the windows are, in terms of rows
+    scroll = 0
 
     def __init__(self, *args):
         self.windows = args
@@ -244,18 +247,27 @@ class List(Window):
         w,h = size
         lines = []
         styles = []
-        log('')
+        current_row = 0
+        current_end = 0
         for win in self.windows:
-            wlines, wstyles = win.render((w,None))
+            wlines, wstyles = win.render((w-1,h-len(lines)))
             if win is self.current_window:
+                current_row = len(lines)
+                current_end = len(lines) + len(wlines)
+                #! bug with w-1
                 wstyles = [s + [('R', 0, w)] for s in wstyles]
             lines.extend(wlines)
             styles.extend(wstyles)
-            if h and len(lines) > h:
-                lines = lines[:h]
-                styles = styles[:h]
-                break
-        #! draw a persistent scroll bar
+        # draw a persistent scroll bar
+        lines = [l + '|' for l in lines]
+        # do current bounds checking
+        if current_end > self.scroll + h:
+            self.scroll = current_end - h
+        if current_row < self.scroll:
+            self.scroll = current_row
+        # slice the right lines
+        lines = lines[self.scroll:self.scroll + h]
+        styles = styles[self.scroll:self.scroll + h]
         return lines, styles
 
     def handle(self, key):
