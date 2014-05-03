@@ -98,7 +98,7 @@ class Application(object):
             current_start = None
             for j,s in enumerate(style_chars):
                 if s != current:
-                    if current_start:
+                    if current_start is not None:
                         style_ranges.append((current, current_start, j))
                     current_start = j
                     current = s
@@ -275,7 +275,6 @@ class List(Window):
             if win is self.current_window:
                 current_row = len(lines)
                 current_end = len(lines) + len(wlines)
-                #! bug with w-1
                 wstyles = [s + [('R', 0, w)] for s in wstyles]
             lines.extend(wlines)
             styles.extend(wstyles)
