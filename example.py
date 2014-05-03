@@ -3,11 +3,17 @@ from ui import *
 ################################################################################
 # example usage
 
-txt1 = Text(('hello world 1\n' * 2)[:-1])
-txt2 = TextNoWrap(((('hello world 2 ' * 10) + '\n') * 10)[:-1])
-b1 = Box(txt1, title_parts=[' plack ', ' dag '], option_parts=[' blah '])
-b2 = Box(txt2, title_parts=[' doop '], option_parts=[' example ', ' auh '])
-p = VerticalPile(b1, b2, b2, b2, b2)
+status = Text('Tests something | ok: 0 | error: 0 | fail: 0', style='RB')
+try:
+    aoeu
+except Exception as e:
+    err = str(e)
+exception = TextNoWrap(err)
+test = Box(exception,
+           title_parts=[' F ', ' a_test '],
+           option_parts=[' Traceback ', ' stdOut '])
+
+p = VerticalPile(status, test)
 
 class App(Application):
     windows = {'default': p}
