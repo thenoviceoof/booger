@@ -107,9 +107,14 @@ class Application(object):
                 style_attr = 0
                 for char in style:
                     style_attr |= ATTRIBUTES.get(char)
-                self.screen.addstr(i, start,
-                                   line[start:end].encode('utf8'),
-                                   style_attr)
+                # catch scrolling-past the end of the screen error
+                try:
+                    self.screen.addstr(i, start,
+                                       line[start:end].encode('utf8'),
+                                       style_attr)
+                except curses.error as e:
+                    if i < h - 1 and end == w:
+                        raise e
 
     def handle(self, key):
         if key == 'q':
