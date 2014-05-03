@@ -245,19 +245,13 @@ class List(Window):
 
     def render(self, size):
         w,h = size
-        lines = []
-        styles = []
-        current_row = 0
-        current_end = 0
-        for win in self.windows:
-            wlines, wstyles = win.render((w-1,h-len(lines)))
-            if win is self.current_window:
-                current_row = len(lines)
-                current_end = len(lines) + len(wlines)
-                #! bug with w-1
-                wstyles = [s + [('R', 0, w)] for s in wstyles]
-            lines.extend(wlines)
-            styles.extend(wstyles)
+        lines, styles, current_row, current_end = self.render_list((w-1,h))
+        # just re-render short enough content
+        if len(lines) < h:
+            lines, styles, current_row, current_end = self.render_list((w,h))
+            # double check
+            if len(lines) < h:
+                return lines, styles
         # draw a persistent scroll bar
         lines = [l + '|' for l in lines]
         # do current bounds checking
@@ -269,6 +263,23 @@ class List(Window):
         lines = lines[self.scroll:self.scroll + h]
         styles = styles[self.scroll:self.scroll + h]
         return lines, styles
+
+    def render_list(self, size):
+        w,h = size
+        lines = []
+        styles = []
+        current_row = 0
+        current_end = 0
+        for win in self.windows:
+            wlines, wstyles = win.render((w,h-len(lines)))
+            if win is self.current_window:
+                current_row = len(lines)
+                current_end = len(lines) + len(wlines)
+                #! bug with w-1
+                wstyles = [s + [('R', 0, w)] for s in wstyles]
+            lines.extend(wlines)
+            styles.extend(wstyles)
+        return lines, styles, current_row, current_end
 
     def handle(self, key):
         signal = self.current_window.handle(key)
