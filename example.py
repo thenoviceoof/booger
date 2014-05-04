@@ -4,7 +4,7 @@ import traceback
 ################################################################################
 # example usage
 
-status = Text('Tests something | ok: 0 | error: 0 | fail: 0', style='RB')
+status = TextNoWrap('Tests something | ok: 0 | error: 0 | fail: 0', style='RB')
 try:
     aoeu
 except Exception as e:
@@ -13,7 +13,7 @@ exception = TextNoWrap(err)
 def test(i):
     test = Box(exception,
                title_parts=[' F ', ' a_test%d ' % i],
-               option_parts=[' Traceback ', ' stdOut '])
+               option_parts=[' Traceback ', ' stdOut ', ' stdErr '])
     return test
 
 tests = List(test(1), test(2), test(3), test(4), test(5), test(6), test(7),
