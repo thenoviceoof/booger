@@ -1,6 +1,7 @@
 import curses
 import locale
 
+# hack to get curses+unicode working
 locale.setlocale(locale.LC_ALL, '')
 
 ################################################################################
