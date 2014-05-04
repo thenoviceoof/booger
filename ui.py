@@ -71,7 +71,7 @@ class Application(object):
             try:
                 key = chr(input_value)
             except ValueError:
-                continue
+                key = input_value
             # pass the character input to the event loop
             try:
                 self.handle(key)
@@ -293,11 +293,11 @@ class List(Window):
     def handle(self, key):
         signal = self.current_window.handle(key)
         if signal is None:
-            if key == 'n':
+            if key in ('n', curses.KEY_DOWN):
                 self.index += 1
-            if key == 'p':
+            if key in ('p', curses.KEY_UP):
                 self.index -= 1
-            if key in 'np':
+            if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN):
                 return 'redraw'
 
 ################################################################################
