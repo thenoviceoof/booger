@@ -126,6 +126,8 @@ class Application(object):
             # default behavior is to just quit
             if key == 'q':
                 raise Exit
+            elif key == curses.KEY_RESIZE:
+                self.render()
         elif signal == 'redraw':
             self.render()
 
