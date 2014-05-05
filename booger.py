@@ -371,6 +371,7 @@ class StatusBar(TextNoWrap):
 class Test(Box):
     def __init__(self, status, test, error):
         exc_type, exception, traceback = error
+        log(dir(test))
         # grab the text
         exc_text = ''
         traceback_lines = 1
@@ -398,17 +399,18 @@ class Test(Box):
                                    option_parts=options)
 
 class App(Application):
-    windows = {'default': None}
+    # make default windows
+    status = StatusBar('Starting up...', style='RB')
+    tests = List()
+    pile = VerticalPile(status, tests, index=1)
+
+    windows = {
+        'default': pile
+        }
 
     tests_done = False
 
     def __init__(self, test_queue, *args, **kwargs):
-        # make windows
-        self.status = StatusBar('Starting up...', style='RB')
-        self.tests = List()
-        self.pile = VerticalPile(self.status, self.tests, index=1)
-        self.windows['default'] = self.pile
-
         self.test_queue = test_queue
         super(App, self).__init__(*args, **kwargs)
 
