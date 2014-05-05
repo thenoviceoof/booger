@@ -265,22 +265,21 @@ class List(Window):
                 return lines, styles
         # draw a persistent scroll bar
         lines = [l + '|' for l in lines]
-        percentage_scrolled = float(current_row) / len(lines)
-        current_size = max(int(h * (float(current_end - current_row) /
-                                    len(lines))),
-                           1)
+        current_size = max(int(h * (float(h) / len(lines))), 1)
         # do current bounds checking
         if current_end > self.scroll + h:
             self.scroll = current_end - h
         if current_row < self.scroll:
             self.scroll = current_row
+        percentage_scrolled = float(max(self.scroll, 0)) / len(lines)
         # slice the right lines
         lines = lines[self.scroll:self.scroll + h]
         styles = styles[self.scroll:self.scroll + h]
         # place the scroll bar in the right place
         location = int(len(lines) * percentage_scrolled)
-        for i in range(current_size):
-            lines[location + i] = lines[location + i][:-1] + '#'
+        for i in range(location, min(location + current_size, h)):
+            # can't assign to tuple index
+            lines[i] = lines[i][:-1] + '#'
 
         return lines, styles
 
