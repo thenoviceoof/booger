@@ -192,9 +192,13 @@ class VerticalPile(Window):
     windows = []
     current_window = None
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.windows = args
-        self.current_window = args[0]
+        if kwargs.get('index'):
+            index = kwargs.get('index')
+        else:
+            index = 0
+        self.current_window = args[index]
 
     def render(self, size):
         w,h = size
@@ -222,13 +226,14 @@ class List(Window):
     windows = []
     current_window = None
     # which window is current
-    _index = 0
+    _index = None
     # how far the windows are, in terms of rows
     scroll = 0
 
     def __init__(self, *args):
-        self.windows = args
-        self.current_window = args[self._index]
+        self.windows = list(args)
+        if self._index:
+            self.current_window = args[self._index]
 
     @property
     def index(self):
@@ -239,17 +244,20 @@ class List(Window):
         # do bounds checking
         if index >= len(self.windows):
             index = len(self.windows) - 1
-        if index < 0:
+        elif index < 0:
             index = 0
         self._index = index
         self.current_window = self.windows[index]
 
+    def add(self, window):
+        self.windows.append(window)
+
     def render(self, size):
         w,h = size
-        lines, styles, current_row, current_end = self.render_list((w-1,h))
+        lines, styles, current_row, current_end = self.render_list((w-1,None))
         # just re-render short enough content
         if len(lines) < h:
-            lines, styles, current_row, current_end = self.render_list((w,h))
+            lines, styles, current_row, current_end = self.render_list((w,None))
             # double check
             if len(lines) < h:
                 return lines, styles
@@ -281,7 +289,7 @@ class List(Window):
         current_row = 0
         current_end = 0
         for win in self.windows:
-            wlines, wstyles = win.render((w,h-len(lines)))
+            wlines, wstyles = win.render((w,None))
             if win is self.current_window:
                 current_row = len(lines)
                 current_end = len(lines) + len(wlines)
@@ -291,13 +299,18 @@ class List(Window):
         return lines, styles, current_row, current_end
 
     def handle(self, key):
-        signal = self.current_window.handle(key)
+        if self.current_window is not None:
+            signal = self.current_window.handle(key)
+        else:
+            signal = None
         if signal is None:
-            if key in ('n', curses.KEY_DOWN):
-                self.index += 1
-            if key in ('p', curses.KEY_UP):
-                self.index -= 1
             if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN):
+                if self.index is None:
+                    self.index = 0
+                elif key in ('n', curses.KEY_DOWN):
+                    self.index += 1
+                elif key in ('p', curses.KEY_UP):
+                    self.index -= 1
                 return 'redraw'
 
 ################################################################################

@@ -20,6 +20,8 @@ from StringIO import StringIO
 
 from nose.plugins import Plugin
 
+from ui import *
+
 ################################################################################
 # utils
 
@@ -28,7 +30,7 @@ def get_new_tests(queue):
     Retrieves tests from the queue, puts them in the right place
     Returns a tuple:
         list of tuples (status, test object, err)
-        whether tests are done
+        whether tests are done (True if tests are done)
     '''
     try:
         s, t, e = queue.get(block=False)
@@ -59,61 +61,8 @@ def get_frames(tb_ptr):
         tb_ptr = tb_ptr.tb_next
     return frames
 
-def get_size(screen):
-    '''
-    Returns a tuple (cols, rows)
-    '''
-    return screen.getmaxyx()[1], screen.getmaxyx()[0]
-
 ################################################################################
 # windowing stuff
-
-MAX_PAD_WIDTH = 300
-MAX_PAD_HEIGHT = 2000
-
-STATUS_BAR_RUNNING  = 'Tests Running...'
-STATUS_BAR_FINISHED = 'Tests Done!     '
-
-TEST_WIN_HEIGHT = 5
-
-class StatusBar(object):
-    def __init__(self, screen, *args, **kwargs):
-        self.screen = screen
-        self.test_counts = {
-            'ok': 0,
-            'fail': 0,
-            'error': 0,
-        }
-        self.finished = False
-
-        # make the curses object
-        size = get_size(self.screen)
-        self.window = curses.newwin(1, size[0])
-        self.window.attrset(curses.A_BOLD)
-        self.window.bkgdset(ord(' '), curses.color_pair(1))
-        self.update()
-
-        super(StatusBar, self).__init__(*args, **kwargs)
-
-    def update(self):
-        self.window.clear()
-        status = []
-        if self.finished:
-            status += [STATUS_BAR_FINISHED]
-        else:
-            status += [STATUS_BAR_RUNNING]
-        status += ['{0}: {1}'.format(x, self.test_counts[x])
-                   for x in ['ok', 'error', 'fail']]
-        status_str = ' | '.join(status)
-        self.window.addstr(0,0, status_str)
-        size = get_size(self.screen)
-        self.window.refresh()
-
-    def add_test(self, test_type):
-        self.test_counts[test_type] += 1
-    def finish(self):
-        self.finished = True
-
 
 class TestWindow(object):
     def __init__(self, screen, test_list, test_status, test, err,
@@ -381,294 +330,107 @@ class TestModal(object):
         # stop searching
         self.search_term = None
 
-class TestList(object):
-    def __init__(self, screen, *args, **kwargs):
-        self.screen = screen
+################################################################################
+# new windowing stuff
 
-        self.window = curses.newpad(MAX_PAD_HEIGHT, MAX_PAD_WIDTH)
-        self.window_list = []
-        self.modal = TestModal(screen)
+STATUS_BAR_RUNNING  = 'Tests Running...'
+STATUS_BAR_FINISHED = 'Tests Done!     '
 
-        self.cur_test = None
-        self.scroll = 0
-        self.dirty = True
+TEST_WIN_HEIGHT = 5
 
-        super(TestList, self).__init__(*args, **kwargs)
+class StatusBar(TextNoWrap):
+    finished = False
 
-    def update(self):
-        if not self.dirty:
-            return
-        # !! try not clearing the entire list
-        self.window.clear()
-        # sizing
-        size = get_size(self.screen)
-        scroll = 0
-        acc = 0
-        for w in self.window_list:
-            if w.selected:
-                scroll = acc
-            acc += w.update(acc)
-        # handle scrolling
-        if scroll > self.scroll + size[1] - 10:
-            self.scroll = scroll - size[1] + 10
-        elif scroll < self.scroll:
-            self.scroll = scroll
-        # draw the scroll bar
-        if acc > size[1]:
-            for i in range(size[1]-1):
-                self.window.addstr(self.scroll+i,size[0]-1, '|')
-            total = acc - (size[1]-1)
-            d = int((float(self.scroll) / total) * (size[1] - 2))
-            self.window.addstr(self.scroll+d, size[0]-1, '#', curses.A_BOLD)
-        # and then do the refresh
-        self.window.refresh(self.scroll,0, 1,0, size[1]-1, size[0]-1)
-        self.dirty = False
-    def add_test(self, test_status, test, err):
-        tw = TestWindow(self.screen, self.window, test_status, test, err)
-        self.window_list.append(tw)
+    test_counts = {
+        'ok': 0,
+        'fail': 0,
+        'error': 0,
+    }
 
-    def move_list(self, n=1):
-        if len(self.window_list) == 0:
-            return
-
-        if self.cur_test is None:
-            cur_test = 0
+    def render(self, size):
+        status = []
+        if self.finished:
+            status += [STATUS_BAR_FINISHED]
         else:
-            cur_test = self.cur_test
+            status += [STATUS_BAR_RUNNING]
+        status += ['{0}: {1}'.format(x, self.test_counts[x])
+                   for x in ['ok', 'error', 'fail']]
+        status_str = ' | '.join(status)
+        self.text = status_str
+        # render the updated text
+        return super(StatusBar, self).render(size)
 
-        self.window_list[cur_test].deselect()
+    def update(self, status):
+        test_type = status[0].upper()
+        mapping = {
+            'F': 'fail',
+            'E': 'error',
+            }
+        self.test_counts[mapping.get(test_type, 'ok')] += 1
 
-        if self.cur_test is None:
-            self.cur_test = 0
-        else:
-            self.cur_test += n
-            self.cur_test %= len(self.window_list)
+class Test(Box):
+    def __init__(self, status, test, error):
+        exc_type, exception, traceback = error
+        # grab the text
+        exc_text = ''
+        traceback_lines = 1
+        frames = get_frames(traceback)
+        for i in range(traceback_lines):
+            j = -traceback_lines+i
+            # get file failed in
+            filename = frames[j].f_code.co_filename
+            exc_text += filename + '\n'
+            # get line of source code failed on
+            with open(filename) as f:
+                code = f.readlines()[frames[j].f_lineno-1]
+            exc_text += code
+        # display what and how
+        exc_name = test.exception.__class__.__name__
+        exc_text += '{0}: {1}'.format(exc_name, test.exception)
+        exc_window = TextNoWrap(exc_text)
 
-        self.window_list[self.cur_test].select()
-        self.dirty = True
-    def start(self):
-        self.cur_test = 0
-    def end(self):
-        self.cur_test = 0
-        self.move_list(-1)
+        # title
+        titles = [' %s ' % status[0].upper(), ' %s ' % test]
+        # options
+        options = [' Traceback ', ' stdOut ', ' stdErr ']
+        super(Test, self).__init__(exc_window,
+                                   title_parts=titles,
+                                   option_parts=options)
 
-    def open_modal(self):
-        if self.cur_test is not None:
-            win = self.window_list[self.cur_test]
-            self.modal.open(win.test, win.err)
-        self.dirty = True
+class App(Application):
+    windows = {'default': None}
 
-
-# handle book keeping (update areas that need updating)
-class TestsGUI(object):
-    def __init__(self, screen, *args, **kwargs):
-        self.screen = screen
-        # state in [list, detail]
-        self.state = 'list'
-
-        # state
-        self.done = False
-        self.new_tests = False
-
-        # gui elements
-        self.status_bar = StatusBar(screen)
-        self.test_list = TestList(screen)
-
-        # for drawing in the main event loop
-        self.dirty = True
-        self.test_list.dirty = True
-
-        # handle resizing
-        self.resize = False
-
-        super(TestsGUI, self).__init__()
-
-    # handle input
-    def handle_input(self, c):
-        '''
-        Return value: False if we are to close
-        '''
-        size = get_size(self.screen)
-        handled = True  # guilty until proven innocent
-        if c == ord('q'):
-            if self.state == 'list':
-                return False
-            else:
-                self.state = 'list'
-                # premature exit
-                self.dirty = True
-                self.modal_close()
-                return True
-        # directional keys
-        elif c in [curses.KEY_DOWN, ord('n')] or curses.unctrl(c) == '^N':
-            self.next()
-        elif c in [curses.KEY_UP, ord('p')] or curses.unctrl(c) == '^P':
-            self.prev()
-        elif c == curses.KEY_NPAGE:
-            self.next(size[1])
-        elif c == curses.KEY_PPAGE:
-            self.prev(size[1])
-        elif c == curses.KEY_HOME:
-            self.start()
-        elif c == curses.KEY_END:
-            self.end()
-        elif c in [curses.KEY_ENTER, ord('\n')]:
-            # used to be the key to bringing up the modal
-            pass
-        # modal switching
-        elif c in [ord('t'), ord('T')]:
-            self.modal_traceback()
-        elif c in [ord('o'), ord('O')]:
-            self.modal_output()
-        elif c in [ord('l'), ord('L')]:
-            self.modal_logging()
-        # modal hotkeys
-        elif c == ord('/'):
-            if self.state != 'list':
-                self.search()
-        # resizing
-        elif c == curses.KEY_RESIZE:
-            self.dirty = True
-            self.resize = True
-            self.test_list.dirty = True
-            self.update()
-        else:
-            handled = False
-        if handled:
-            self.dirty = True
-        return True
-
-    # draw things
-    def update(self):
-        # this is a hack to ensure a resize doesn't wipe out changes
-        if self.resize and not self.dirty:
-            self.dirty = True
-            if self.state == 'list':
-                self.test_list.dirty = True
-            self.dirty = True
-            self.resize = False
-        if not self.dirty:
-            return
-        if self.state == 'list':
-            self.status_bar.update()
-            self.test_list.update()
-        else:
-            self.test_list.modal.update()
-        self.dirty = False
-
-    # movement 
-    def next(self, n=1):
-        if self.state == 'list':
-            self.test_list.dirty = True
-            self.test_list.move_list(n)
-        else:
-            self.test_list.modal.scroll(n)
-    def prev(self, n=1):
-        if self.state == 'list':
-            self.test_list.dirty = True
-            self.test_list.move_list(-n)
-        else:
-            self.test_list.modal.scroll(-n)
-    def start(self):
-        if self.state == 'list':
-            self.test_list.dirty = True
-            self.test_list.start()
-        else:
-            self.test_list.modal.start()
-    def end(self):
-        if self.state == 'list':
-            self.test_list.dirty = True
-            self.test_list.end()
-        else:
-            self.test_list.modal.end()
-
-    # handle modality
-    def modal_traceback(self):
-        self.test_list.open_modal()
-        if self.test_list.modal.traceback():
-            self.state = 'traceback'
-    def modal_output(self):
-        self.test_list.open_modal()
-        if self.test_list.modal.output():
-            self.state = 'stdout'
-    def modal_logging(self):
-        self.test_list.open_modal()
-        if self.test_list.modal.logging():
-            self.state = 'logging'
-    def modal_close(self):
-        self.test_list.modal.close()
-        self.state = 'list'
-
-    # search
-    def search(self):
-        # make a search bar
-        size = get_size(self.screen)
-        search_cont = curses.newwin(2,size[0], size[1]-2,0)
-        search_line = search_cont.derwin(1,size[0]-1, 1,0)
-        search_bar = curses.textpad.Textbox(search_line)
-
-        # draw some window dressing
-        search_cont.addstr(0,0, '_' * (size[0]-1))
-        search_cont.refresh()
-        # editing
-        string = search_bar.edit()
-        self.test_list.modal.search(string)
-
-    # test related things
-    def add_test(self, test_type, test, err):
-        # update the status bar
-        self.status_bar.add_test(test_type)
-
-        if test_type != 'ok':
-            self.test_list.add_test(test_type, test, err)
-        self.dirty = True
-        self.test_list.dirty = True
-    def finish(self):
-        self.dirty = True
-        self.status_bar.finish()
-
-def curses_main(scr, test_queue):
-    # set up the main window, which sets up everything else
-    interface = TestsGUI(scr)
-
-    # set up curses colors
-    curses.use_default_colors()
-    curses.curs_set(0)
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    # wait for a character for only 0.1s
-    curses.halfdelay(1)
-
-    interface.update()
     tests_done = False
-    handle_tests = True
-    try:
-        while 1:
-            # handle input
-            c = scr.getch()
-            if not interface.handle_input(c):
-                return
 
-            # handle any new tests
-            if handle_tests:
-                if not tests_done:
-                    new_tests, tests_done = get_new_tests(test_queue)
-                if new_tests:
-                    for stat, test, err in new_tests:
-                        interface.add_test(stat, test, err)
-                    new_tests = []
-                if tests_done:
-                    handle_tests = False
-                    interface.finish()
+    def __init__(self, test_queue, *args, **kwargs):
+        # make windows
+        self.status = StatusBar('Starting up...', style='RB')
+        self.tests = List()
+        self.pile = VerticalPile(self.status, self.tests, index=1)
+        self.windows['default'] = self.pile
 
-            interface.update()
-    except KeyboardInterrupt:
-        return
+        self.test_queue = test_queue
+        super(App, self).__init__(*args, **kwargs)
+
+    def handle(self, key):
+        result = super(App, self).handle(key)
+        # pull the latest test, update everyone
+        if not self.tests_done:
+            tests, done = get_new_tests(self.test_queue)
+            # add new tests
+            for status, test, error in tests:
+                self.status.update(status)
+                if status != 'ok':
+                    self.tests.add(Test(status, test, error))
+            # mark done
+            if done:
+                self.status.finished = True
+                self.tests_done = True
+            # redraw
+            self.render()
 
 def curses_run(test_queue):
-    '''
-    Little wrapper to facilitate thread running
-    '''
-    curses.wrapper(curses_main, test_queue)
+    App(test_queue).run()
 
 ################################################################################
 # nose plugin
