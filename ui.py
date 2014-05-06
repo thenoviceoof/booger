@@ -119,17 +119,33 @@ class Application(object):
                         raise e
         self.screen.refresh()
 
+    def _switch_window(self, window_name, args=None):
+        window = self.windows[window_name]
+        self.current_window = window
+        if args is not None:
+            for k,v in args.iteritems():
+                setattr(window, k, v)
+
     def handle(self, key):
         # see if the application needs to run it's own handler
         signal = self.current_window.handle(key)
         if signal is None:
             # default behavior is to just quit
             if key == 'q':
-                raise Exit
+                if self.current_window is not self.windows['default']:
+                    self._switch_window('default')
+                    self.render()
+                else:
+                    raise Exit
             elif key == curses.KEY_RESIZE:
                 self.render()
         elif signal == 'redraw':
             self.render()
+        elif isinstance(signal, tuple):
+            if len(signal) > 0 and signal[0] == 'window':
+                _, window_name, window_args = signal
+                self._switch_window(window_name, window_args)
+                self.render()
 
 ################################################################################
 
