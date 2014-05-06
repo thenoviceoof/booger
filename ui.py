@@ -314,6 +314,58 @@ class List(Window):
                     self.index -= 1
                 return 'redraw'
 
+class Scrollable(Window):
+    window = None
+    # how far the window is, in terms of rows
+    scroll = 0
+
+    def __init__(self, window, scroll=0):
+        self.window = window
+        self.scroll = scroll
+
+    def render(self, size):
+        w,h = size
+        lines, styles = self.window.render((w-1,None))
+        # just re-render short enough content
+        if len(lines) < h:
+            lines, styles = self.window.render((w,None))
+            # double check
+            if len(lines) < h:
+                return lines, styles
+        # fix up scroll
+        if self.scroll < 0:
+            self.scroll = 0
+        if self.scroll + h > len(lines):
+            self.scroll = len(lines) - h
+        # draw a persistent scroll bar
+        lines = [l + '|' for l in lines]
+        current_size = max(int(h * (float(h) / len(lines))), 1)
+        percentage_scrolled = float(max(self.scroll, 0)) / len(lines)
+        # slice the right lines
+        lines = lines[self.scroll:self.scroll + h]
+        styles = styles[self.scroll:self.scroll + h]
+        # place the scroll bar in the right place
+        location = int(len(lines) * percentage_scrolled)
+        for i in range(location, min(location + current_size, h)):
+            # can't assign to tuple index
+            lines[i] = lines[i][:-1] + '#'
+
+        return lines, styles
+
+    def handle(self, key):
+        if self.window is not None:
+            signal = self.window.handle(key)
+        else:
+            signal = None
+        if signal is None:
+            if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN):
+                if key in ('n', curses.KEY_DOWN):
+                    self.scroll += 1
+                elif key in ('p', curses.KEY_UP):
+                    self.scroll -= 1
+                return 'redraw'
+        return signal
+
 ################################################################################
 
 class Text(Window):
@@ -359,6 +411,48 @@ class TextNoWrap(Window):
             else:
                 lines.append(texts[0])
             texts.pop(0)
+        # pad everything out
+        lines = [line + ' ' * (w - len(line)) for line in lines]
+        # pad out styles
+        styles = [[(self.style, 0, w)] for i in range(len(lines))]
+        return lines, styles
+
+class TextLineNumbers(Window):
+    _text = ''
+    texts = []
+    style = ''
+
+    def __init__(self, text, style=''):
+        self.text = text
+        self.style = style
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        self._text = text
+        self.texts = text.split('\n')
+
+    def render(self, size):
+        w,h = size
+        total = len(self.texts)
+        nlen = len('%d' % total)
+        inner_width = w - nlen - 1  # +1 for divider
+        lines = []
+        i = 0
+        j = 0
+        while i < len(self.texts) and (len(lines) < h if h else True):
+            if j == 0:
+                number = '%d' % i
+                lines.append(number + '|' + self.texts[i][j:j + inner_width])
+            else:
+                lines.append((' ' * nlen) + '|' + self.texts[i][j:j + inner_width])
+            j += inner_width
+            if j >= len(self.texts[i]):
+                i += 1
+                j = 0
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
         # pad out styles
