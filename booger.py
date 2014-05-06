@@ -376,6 +376,7 @@ class Test(Box):
         exc_text = ''
         traceback_lines = 1
         frames = get_frames(traceback)
+        self.frames = frames
         for i in range(traceback_lines):
             j = -traceback_lines+i
             # get file failed in
@@ -403,6 +404,11 @@ class Test(Box):
     def handle(self, key):
         signal = super(Test, self).handle(key)
         if signal is None:
+            if key in ('t', 'T'):
+                tb = self.frames
+                return ('window', 'traceback', {'traceback': tb,
+                                                'type': 'traceback',
+                                                'title': str(self.test)})
             if key in ('o', 'O'):
                 text = self.test.capturedOutput
                 if not text:
@@ -421,21 +427,6 @@ class Test(Box):
         return signal
 
 class Modal(Box):
-    def __init__(self, text):
-        text_lines = TextLineNumbers(text)
-        #! planned
-        # text_lines = Search(Scrollable(text_lines), lambda x: x.lines)
-        text_lines = Scrollable(text_lines)
-        super(Modal, self).__init__(text_lines, title_parts=['', ''])
-
-    @property
-    def text(self):
-        return self.window.window.text
-
-    @text.setter
-    def text(self, text):
-        self.window.window.text = text
-
     @property
     def type(self):
         return self.title_parts[0]
@@ -452,18 +443,66 @@ class Modal(Box):
     def title(self, title):
         self.title_parts[1] = ' %s ' % title
 
+class TracebackModal(Modal):
+    _traceback = None
+
+    def __init__(self):
+        self.frame_windows = List()
+        super(TracebackModal, self).__init__(self.frame_windows,
+                                             title_parts=['', ''])
+
+    @property
+    def traceback(self):
+        return self._traceback
+
+    @traceback.setter
+    def traceback(self, traceback):
+        self.frame_windows.clear()
+        log(traceback)
+        log(dir(traceback[0]))
+
+        self._traceback = traceback
+        for frame in traceback:
+            # get code
+            path = frame.f_code.co_filename
+            with open(path) as f:
+                code = ('%d|' % frame.f_lineno).rjust(5)
+                code += f.readlines()[frame.f_lineno-1][:-1].rstrip()
+            # windows
+            path_window = TextNoWrap(path)
+            code_window = TextNoWrap(code)
+            line = VerticalPile(path_window, code_window)
+            self.frame_windows.add(line)
+
+class OutputModal(Modal):
+    def __init__(self):
+        text_lines = TextLineNumbers('')
+        #! planned
+        # text_lines = Search(Scrollable(text_lines), lambda x: x.lines)
+        text_lines = Scrollable(text_lines)
+        super(OutputModal, self).__init__(text_lines, title_parts=['', ''])
+
+    @property
+    def text(self):
+        return self.window.window.text
+
+    @text.setter
+    def text(self, text):
+        self.window.window.text = text
+
 class App(Application):
     # make default windows
     status = StatusBar('Starting up...', style='RB')
     tests = List()
     pile = VerticalPile(status, tests, index=1)
     # make modal windows
-    # traceback_modal = Modal()
-    output_modal = Modal('Standard out')
+    traceback_modal = TracebackModal()
+    output_modal = OutputModal()
 
     windows = {
         'default': pile,
-        'output': output_modal
+        'output': output_modal,
+        'traceback': traceback_modal,
         }
 
     tests_done = False

@@ -225,11 +225,14 @@ class VerticalPile(Window):
         w,h = size
         lines = []
         styles = []
+        htmp = None
         for win in self.windows:
-            wlines, wstyles = win.render((w,h-len(lines)))
+            if h is not None:
+                htmp = h - len(lines)
+            wlines, wstyles = win.render((w, htmp))
             lines.extend(wlines)
             styles.extend(wstyles)
-            if len(lines) > h:
+            if h is not None and len(lines) > h:
                 lines = lines[:h]
                 styles = styles[:h]
                 break
@@ -272,6 +275,9 @@ class List(Window):
 
     def add(self, window):
         self.windows.append(window)
+
+    def clear(self):
+        self.windows = []
 
     def render(self, size):
         w,h = size
