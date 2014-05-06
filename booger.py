@@ -393,7 +393,9 @@ class Test(Box):
         # title
         titles = [' %s ' % status[0].upper(), ' %s ' % test]
         # options
-        options = [' Traceback ', ' stdOut ', ' stdErr ']
+        options = [' Traceback ',
+                   ' stdOut ' if self.test.capturedOutput else u'\u2500' * 8,
+                   ' Logging ' if self.test.capturedLogging else u'\u2500' * 9]
         super(Test, self).__init__(exc_window,
                                    title_parts=titles,
                                    option_parts=options)
@@ -403,8 +405,18 @@ class Test(Box):
         if signal is None:
             if key in ('o', 'O'):
                 text = self.test.capturedOutput
+                if not text:
+                    return None  # don't do anything for no output
                 return ('window', 'output', {'text': text,
                                              'type': 'stdout',
+                                             'title': str(self.test)})
+            if key in ('l', 'L'):
+                text = self.test.capturedLogging
+                if not text:
+                    return None  # don't do anything for no output
+                text = '\n'.join(text)  # comes back as a list
+                return ('window', 'output', {'text': text,
+                                             'type': 'logging',
                                              'title': str(self.test)})
         return signal
 
