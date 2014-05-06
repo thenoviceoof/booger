@@ -465,7 +465,7 @@ class TextLineNumbers(Window):
         j = 0
         while i < len(self.texts) and (len(lines) < h if h else True):
             if j == 0:
-                number = '%d' % i
+                number = ('%d' % i).rjust(nlen)
                 lines.append(number + '|' + self.texts[i][j:j + inner_width])
             else:
                 lines.append((' ' * nlen) + '|' + self.texts[i][j:j + inner_width])
