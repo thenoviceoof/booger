@@ -370,8 +370,8 @@ class StatusBar(TextNoWrap):
 
 class Test(Box):
     def __init__(self, status, test, error):
+        self.test = test
         exc_type, exception, traceback = error
-        log(dir(test))
         # grab the text
         exc_text = ''
         traceback_lines = 1
@@ -398,14 +398,60 @@ class Test(Box):
                                    title_parts=titles,
                                    option_parts=options)
 
+    def handle(self, key):
+        signal = super(Test, self).handle(key)
+        if signal is None:
+            if key in ('o', 'O'):
+                text = self.test.capturedOutput
+                return ('window', 'output', {'text': text,
+                                             'type': 'stdout',
+                                             'title': str(self.test)})
+        return signal
+
+class Modal(Box):
+    def __init__(self, text):
+        text_lines = TextLineNumbers(text)
+        #! planned
+        # text_lines = Search(Scrollable(text_lines), lambda x: x.lines)
+        text_lines = Scrollable(text_lines)
+        super(Modal, self).__init__(text_lines, title_parts=['', ''])
+
+    @property
+    def text(self):
+        return self.window.window.text
+
+    @text.setter
+    def text(self, text):
+        self.window.window.text = text
+
+    @property
+    def type(self):
+        return self.title_parts[0]
+
+    @type.setter
+    def type(self, type):
+        self.title_parts[0] = ' %s ' % type
+
+    @property
+    def title(self):
+        return self.title_parts[1]
+
+    @title.setter
+    def title(self, title):
+        self.title_parts[1] = ' %s ' % title
+
 class App(Application):
     # make default windows
     status = StatusBar('Starting up...', style='RB')
     tests = List()
     pile = VerticalPile(status, tests, index=1)
+    # make modal windows
+    # traceback_modal = Modal()
+    output_modal = Modal('Standard out')
 
     windows = {
-        'default': pile
+        'default': pile,
+        'output': output_modal
         }
 
     tests_done = False
