@@ -338,6 +338,7 @@ class Scrollable(Window):
     window = None
     # how far the window is, in terms of rows
     scroll = 0
+    prev_h = 0
 
     def __init__(self, window, scroll=0):
         self.window = window
@@ -345,6 +346,9 @@ class Scrollable(Window):
 
     def render(self, size):
         w,h = size
+        # store h for scrolling
+        if h is not None:
+            self.prev_h = h
         lines, styles = self.window.render((w-1,None))
         # just re-render short enough content
         if len(lines) < h:
@@ -378,11 +382,16 @@ class Scrollable(Window):
         else:
             signal = None
         if signal is None:
-            if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN):
+            if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN,
+                       curses.KEY_PPAGE, curses.KEY_NPAGE):
                 if key in ('n', curses.KEY_DOWN):
                     self.scroll += 1
                 elif key in ('p', curses.KEY_UP):
                     self.scroll -= 1
+                elif key == curses.KEY_NPAGE:
+                    self.scroll += self.prev_h
+                elif key == curses.KEY_PPAGE:
+                    self.scroll -= self.prev_h
                 return 'redraw'
         return signal
 
