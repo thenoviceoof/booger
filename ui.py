@@ -162,8 +162,8 @@ class Box(Window):
 
     def __init__(self, window, title_parts=[], option_parts=[], spacing=2):
         self.window = window
-        self.title_parts = title_parts
-        self.option_parts = option_parts
+        self.title_parts = list(title_parts)
+        self.option_parts = list(option_parts)
         self.spacing = spacing
 
     def render(self, size):
@@ -205,6 +205,9 @@ class Box(Window):
         else:
             accum += lines
         return accum
+
+    def handle(self, key):
+        return self.window.handle(key)
 
 class VerticalPile(Window):
     windows = []
@@ -329,6 +332,7 @@ class List(Window):
                 elif key in ('p', curses.KEY_UP):
                     self.index -= 1
                 return 'redraw'
+        return signal
 
 class Scrollable(Window):
     window = None
