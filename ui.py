@@ -157,14 +157,18 @@ class Box(Window):
     title_parts = []
     option_parts = []
     spacing = 2
+    force = False
 
     window = None
 
-    def __init__(self, window, title_parts=[], option_parts=[], spacing=2):
+    def __init__(self, window, title_parts=[], option_parts=[],
+                 spacing=2, force=None):
         self.window = window
         self.title_parts = list(title_parts)
         self.option_parts = list(option_parts)
         self.spacing = spacing
+        if force is not None:
+            self.force = force
 
     def render(self, size):
         w,h = size
@@ -176,6 +180,9 @@ class Box(Window):
         top_line = u'\u250c' + top_line + u'\u2510'
         bot_line = u'\u2514' + bot_line + u'\u2518'
         # wrap content
+        if self.force and h is not None and len(rlines) < h - 2:
+            rlines += [' ' * (w-2) for i in range(h - 2 - len(rlines))]
+            rstyles += [[('', 0, w-2)] for i in range(h - 2 - len(rstyles))]
         lines = [(u'\u2502' + line + u'\u2502') for line in rlines]
         lines = [top_line] + lines + [bot_line]
         # wrap up styles

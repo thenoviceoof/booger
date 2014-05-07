@@ -158,6 +158,8 @@ class Test(Box):
         return signal
 
 class Modal(Box):
+    force = True
+
     @property
     def type(self):
         return self.title_parts[0]
