@@ -14,9 +14,6 @@ import nose
 import Queue
 import curses
 import threading
-import exceptions
-import curses.textpad
-from StringIO import StringIO
 
 from nose.plugins import Plugin
 
@@ -266,9 +263,9 @@ def curses_run(test_queue):
 
 class BoogerPlugin(Plugin):
     '''
-    Something
+    A pretty curses-based nose frontend
     '''
-    enabled = False
+    enabled = True
     name = 'booger'
     score = 3000
 
