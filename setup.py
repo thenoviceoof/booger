@@ -15,7 +15,7 @@ setup(
         'nose',
     ],
     entry_points = {
-        'nose.plugins': [
+        'nose.plugins.0.10': [
             'booger = booger:BoogerPlugin'
         ]
     },

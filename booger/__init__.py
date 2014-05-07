@@ -115,8 +115,9 @@ class Test(Box):
                 code = f.readlines()[frames[j].f_lineno-1]
             exc_text += code
         # display what and how
-        exc_name = test.exception.__class__.__name__
-        exc_text += '{0}: {1}'.format(exc_name, test.exception)
+        exc_name = exc_type.__name__
+        msg = exception.message if hasattr(exception, 'message') else ''
+        exc_text += '{0}: {1}'.format(exc_name, msg)
         exc_window = TextNoWrap(exc_text)
 
         # title
@@ -265,7 +266,7 @@ class BoogerPlugin(Plugin):
     '''
     A pretty curses-based nose frontend
     '''
-    enabled = True
+    enabled = False
     name = 'booger'
     score = 3000
 
@@ -273,9 +274,6 @@ class BoogerPlugin(Plugin):
         super(BoogerPlugin, self).__init__(*args, **kwargs)
 
         self.test_queue = Queue.Queue()
-        self.curses = threading.Thread(target=curses_run,
-                                       args=(self.test_queue,))
-        self.curses.start()
 
     ############################################################################
     # options
@@ -290,6 +288,11 @@ class BoogerPlugin(Plugin):
     def configure(self, options, conf):
         self.conf = conf
         self.enabled = options.booger
+
+        if self.enabled:
+            self.curses = threading.Thread(target=curses_run,
+                                           args=(self.test_queue,))
+            self.curses.start()
 
     ############################################################################
     # test outcome handler
