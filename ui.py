@@ -34,7 +34,6 @@ def log(stuff):
 class Application(object):
     current_window = None
     windows = {}
-    modals = {}
 
     screen = None
     window = None

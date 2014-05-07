@@ -191,9 +191,6 @@ class TracebackModal(Modal):
     @traceback.setter
     def traceback(self, traceback):
         self.frame_windows.clear()
-        log(traceback)
-        log(dir(traceback[0]))
-
         self._traceback = traceback
         for frame in traceback:
             # get code
