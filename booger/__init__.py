@@ -105,15 +105,16 @@ class Test(Box):
         traceback_lines = 1
         frames = get_frames(traceback)
         self.frames = frames
-        for i in range(traceback_lines):
-            j = -traceback_lines+i
-            # get file failed in
-            filename = frames[j].f_code.co_filename
-            exc_text += filename + '\n'
-            # get line of source code failed on
-            with open(filename) as f:
-                code = f.readlines()[frames[j].f_lineno-1]
-            exc_text += code
+        if len(self.frames) >= traceback_lines:
+            for i in range(traceback_lines):
+                j = -traceback_lines+i
+                # get file failed in
+                filename = frames[j].f_code.co_filename
+                exc_text += filename + '\n'
+                # get line of source code failed on
+                with open(filename) as f:
+                    code = f.readlines()[frames[j].f_lineno-1]
+                exc_text += code
         # display what and how
         exc_name = exc_type.__name__
         msg = exception.message if hasattr(exception, 'message') else ''
