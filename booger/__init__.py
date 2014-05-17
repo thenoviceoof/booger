@@ -215,7 +215,7 @@ class TracebackCode(Text):
 
 class TracebackVars(Box):
     def __init__(self, *args, **kwargs):
-        self.vars = Text('')
+        self.vars = Text('', indent=' ' * 14)
         kwargs.update({'title_parts': [' Variables '], 'force': True})
         super(TracebackVars, self).__init__(self.vars, *args, **kwargs)
 
