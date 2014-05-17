@@ -213,12 +213,43 @@ class TracebackCode(Text):
             styles = styles[-1:]
         return lines, styles
 
+class TracebackVars(Box):
+    def __init__(self, *args, **kwargs):
+        self.vars = Text('')
+        kwargs.update({'title_parts': [' Variables '], 'force': True})
+        super(TracebackVars, self).__init__(self.vars, *args, **kwargs)
+
+    def render(self, size):
+        w,h = size
+        # munge so we can trim the decorations
+        lines, styles = super(TracebackVars, self).render((w+2,h+1))
+        # trim lower lines
+        lines = lines[:-1]
+        styles = styles[:-1]
+        # trim sides
+        lines = [l[1:-1] for l in lines]
+        styles = [[(s[0],s[1]-1,s[2]-1) if s else s for s in line]
+                  for line in styles]
+        # add bold to the top
+        styles[0].append(('B', 0, w))
+        return lines, styles
+
+    def display_vars(self, frame):
+        local_vars = getattr(frame, 'f_locals', None)
+        #global_vars = getattr(frame, 'f_globals', None)
+        if local_vars:
+            var_lines = ['{0}: {1}'.format(vname, vvalue)
+                         for vname, vvalue in local_vars.iteritems()]
+            self.vars.text = '\n'.join(var_lines)
+
 class TracebackModal(Modal):
     _traceback = None
 
     def __init__(self):
         self.frame_windows = TracebackList()
-        super(TracebackModal, self).__init__(self.frame_windows,
+        self.var_disp = TracebackVars()
+        self.split_pane = VerticalPileEqual(self.frame_windows)
+        super(TracebackModal, self).__init__(self.split_pane,
                                              title_parts=['', ''])
 
     @property
@@ -245,6 +276,30 @@ class TracebackModal(Modal):
             code_window = TracebackCode(code)
             line = VerticalPile(path_window, code_window)
             self.frame_windows.add(line)
+            # keep frame around for future reference
+            line.frame = frame
+
+    def handle(self, key):
+        signal = super(TracebackModal, self).handle(key)
+        if signal is None:
+            if key in ('v', 'V'):
+                if len(self.split_pane.windows) == 1:
+                    self.split_pane.windows += (self.var_disp,)
+                    # populate the vars
+                    current_frame = self.frame_windows.current_window.frame
+                    self.var_disp.display_vars(current_frame)
+                else:
+                    self.split_pane.windows = self.split_pane.windows[:1]
+                # var shown/hidden, redraw
+                return 'redraw'
+        # redo the vars if you move frames
+        if signal is None or signal == 'redraw':
+            if key in ('n', curses.KEY_UP, 'p', curses.KEY_DOWN):
+                if len(self.split_pane.windows) > 1:
+                    current_frame = self.frame_windows.current_window.frame
+                    self.var_disp.display_vars(current_frame)
+                return 'redraw'
+        return signal
 
 class OutputModal(Modal):
     def __init__(self):

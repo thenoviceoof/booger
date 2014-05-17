@@ -249,6 +249,31 @@ class VerticalPile(Window):
         signal = self.current_window.handle(key)
         return signal
 
+class VerticalPileEqual(VerticalPile):
+    def render(self, size):
+        w,h = size
+        lines = []
+        styles = []
+        htmp = None
+        for win in self.windows:
+            # handle special case, let last window take up orphaned rows
+            if win is self.windows[-1]:
+                htmp = h - len(lines)
+            elif h is not None:
+                htmp = h / len(self.windows)
+            wlines, wstyles = win.render((w, htmp))
+            # pad out lines if necessary
+            if len(wlines) < htmp:
+                wlines += (htmp - len(wlines)) * [' ' * w]
+                wstyles += (htmp - len(wstyles)) * [tuple()]
+            lines.extend(wlines)
+            styles.extend(wstyles)
+            if h is not None and len(lines) > h:
+                lines = lines[:h]
+                styles = styles[:h]
+                break
+        return lines, styles
+
 class List(Window):
     windows = []
     current_window = None
