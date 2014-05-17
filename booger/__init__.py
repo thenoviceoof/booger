@@ -105,7 +105,6 @@ class TestList(List):
         super(TestList, self)._set_index(index)
         for i,w in enumerate(self.windows):
             # need to reach into the pile.text/code to set the select
-            log(w.window)
             w.window.selected = True if i == self.index else False
 
 class TestCode(TextNoWrap):
