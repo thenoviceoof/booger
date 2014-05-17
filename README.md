@@ -3,6 +3,10 @@ booger
 Eats the output of a nosetests run, and put it into a nice curses
 interface.
 
+![Booger main listing](https://raw.githubusercontent.com/thenoviceoof/booger/docs/docs/page1.png)
+
+![Booger variable view](https://raw.githubusercontent.com/thenoviceoof/booger/docs/docs/page2.png)
+
 
 MOTIVATION
 --------------------------------------------------------------------------------
