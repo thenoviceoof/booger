@@ -269,8 +269,8 @@ class List(Window):
     def index(self):
         return self._index
 
-    @index.setter
-    def index(self, index):
+    # allow inherited classes to override index setting behavior
+    def _set_index(self, index):
         # do bounds checking
         if index >= len(self.windows):
             index = len(self.windows) - 1
@@ -278,6 +278,10 @@ class List(Window):
             index = 0
         self._index = index
         self.current_window = self.windows[index]
+
+    @index.setter
+    def index(self, index):
+        self._set_index(index)
 
     def add(self, window):
         self.windows.append(window)

@@ -67,6 +67,9 @@ STATUS_BAR_FINISHED = 'Tests Done!     '
 
 TEST_WIN_HEIGHT = 5
 
+TRACEBACK_CODE_CONTEXT = 5
+TRACEBACK_TEST_DEPTH = 3
+
 class StatusBar(TextNoWrap):
     finished = False
 
@@ -97,18 +100,34 @@ class StatusBar(TextNoWrap):
             }
         self.test_counts[mapping.get(test_type, 'ok')] += 1
 
+class TestList(List):
+    def _set_index(self, index):
+        super(TestList, self)._set_index(index)
+        for i,w in enumerate(self.windows):
+            # need to reach into the pile.text/code to set the select
+            log(w.window)
+            w.window.selected = True if i == self.index else False
+
+class TestCode(TextNoWrap):
+    def render(self, size):
+        lines, styles = super(TestCode, self).render(size)
+        if not getattr(self, 'selected', None):
+            # include the path, code, and exception
+            lines = lines[-3:]
+            styles = styles[-3:]
+        return lines, styles
+
 class Test(Box):
     def __init__(self, status, test, error):
         self.test = test
         exc_type, exception, traceback = error
         # grab the text
         exc_text = ''
-        traceback_lines = 1
         frames = get_frames(traceback)
         self.frames = frames
-        if len(self.frames) >= traceback_lines:
-            for i in range(traceback_lines):
-                j = -traceback_lines+i
+        if len(self.frames) >= TRACEBACK_TEST_DEPTH:
+            for i in range(TRACEBACK_TEST_DEPTH):
+                j = -TRACEBACK_TEST_DEPTH+i
                 # get file failed in
                 filename = frames[j].f_code.co_filename
                 exc_text += filename + '\n'
@@ -120,7 +139,7 @@ class Test(Box):
         exc_name = exc_type.__name__
         msg = exception.message if hasattr(exception, 'message') else ''
         exc_text += '{0}: {1}'.format(exc_name, msg)
-        exc_window = TextNoWrap(exc_text)
+        exc_window = TestCode(exc_text)
 
         # title
         titles = [' %s ' % status[0].upper(), ' %s ' % test]
@@ -180,11 +199,26 @@ class Modal(Box):
     def title(self, title):
         self.title_parts[1] = ' %s ' % title
 
+class TracebackList(List):
+    def _set_index(self, index):
+        super(TracebackList, self)._set_index(index)
+        for i,w in enumerate(self.windows):
+            # need to reach into the pile.text/code to set the select
+            w.windows[1].selected = True if i == self.index else False
+
+class TracebackCode(Text):
+    def render(self, size):
+        lines, styles = super(TracebackCode, self).render(size)
+        if not getattr(self, 'selected', None):
+            lines = lines[-1:]
+            styles = styles[-1:]
+        return lines, styles
+
 class TracebackModal(Modal):
     _traceback = None
 
     def __init__(self):
-        self.frame_windows = List()
+        self.frame_windows = TracebackList()
         super(TracebackModal, self).__init__(self.frame_windows,
                                              title_parts=['', ''])
 
@@ -200,11 +234,16 @@ class TracebackModal(Modal):
             # get code
             path = frame.f_code.co_filename
             with open(path) as f:
-                code = ('%d|' % frame.f_lineno).rjust(5)
-                code += f.readlines()[frame.f_lineno-1][:-1].rstrip()
+                start_line = frame.f_lineno - TRACEBACK_CODE_CONTEXT
+                end_line = frame.f_lineno
+                lines = f.readlines()[start_line:end_line]
+                lines = [l.rstrip() for l in lines]
+                code = (('%d|' % i).rjust(5) + l
+                        for i,l in zip(range(start_line, end_line), lines))
+                code = '\n'.join(code)
             # windows
             path_window = Text(path, style='B')
-            code_window = Text(code)
+            code_window = TracebackCode(code)
             line = VerticalPile(path_window, code_window)
             self.frame_windows.add(line)
 
@@ -227,7 +266,7 @@ class OutputModal(Modal):
 class App(Application):
     # make default windows
     status = StatusBar('Starting up...', style='RB')
-    tests = List()
+    tests = TestList()
     pile = VerticalPile(status, tests, index=1)
     # make modal windows
     traceback_modal = TracebackModal()
