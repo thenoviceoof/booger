@@ -1,3 +1,6 @@
 *~
 *.pyc
 .ropeproject
+
+# for setup.py build
+dist
