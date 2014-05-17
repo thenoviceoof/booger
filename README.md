@@ -62,6 +62,10 @@ Questions that will probably be asked frequently
  - Q: Really? Toilet Humor?
  - A: Yup
 
+ - Q: Where can I report bugs?
+ - A: Please use the [project's github bug
+   tracker](https://github.com/thenoviceoof/booger/issues?state=open)
+
 
 LICENSE
 --------------------------------------------------------------------------------
