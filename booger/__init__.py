@@ -125,8 +125,12 @@ class Test(Box):
         titles = [' %s ' % status[0].upper(), ' %s ' % test]
         # options
         options = [' Traceback ',
-                   ' stdOut ' if self.test.capturedOutput else u'\u2500' * 8,
-                   ' Logging ' if self.test.capturedLogging else u'\u2500' * 9]
+                   ' stdOut '
+                   if getattr(self.test, 'capturedOutput', None) else
+                   u'\u2500' * 8,
+                   ' Logging '
+                   if getattr(self.test, 'capturedLogging', None) else
+                   u'\u2500' * 9]
         super(Test, self).__init__(exc_window,
                                    title_parts=titles,
                                    option_parts=options)
@@ -140,14 +144,14 @@ class Test(Box):
                                                 'type': 'traceback',
                                                 'title': str(self.test)})
             if key in ('o', 'O'):
-                text = self.test.capturedOutput
+                text = getattr(self.test, 'capturedOutput', None)
                 if not text:
                     return None  # don't do anything for no output
                 return ('window', 'output', {'text': text,
                                              'type': 'stdout',
                                              'title': str(self.test)})
             if key in ('l', 'L'):
-                text = self.test.capturedLogging
+                text = getattr(self.test, 'capturedLogging', None)
                 if not text:
                     return None  # don't do anything for no output
                 text = '\n'.join(text)  # comes back as a list
