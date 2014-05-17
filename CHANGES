@@ -1,3 +1,4 @@
+v0.1.2, 2014/05/17 -- Wrap long traceback lines (paths/code)
 v0.1.1, 2014/05/17 -- Only quit in extraordinary (UI before tests) situations
 v0.1.0, 2014/05/17 -- Quit both threads when quitting from UI
 v0.0.3, 2014/05/16 -- Fix bug with missing attributes on test objects
