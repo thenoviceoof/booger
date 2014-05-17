@@ -22,7 +22,7 @@ INSTALLATION
 
 USAGE
 --------------------------------------------------------------------------------
-To use booger, you can use either invoke it as a plugin, or call the
+To use `booger`, you can use either invoke it as a plugin, or call the
 wrapping script.
 
     nosetests --booger YOUR_TESTS
@@ -30,14 +30,15 @@ wrapping script.
     booger YOUR_TESTS
 
 Commands:
- - Move with up/down arrow keys, or n/p (next/previous) keys
+ - Move with `up`/`down` arrow keys, or `n`/`p` (next/previous) keys
  - On the main testcase listing, with a selected testcase, press:
-   - t for traceback
-   - o for stdout
-   - l for logging output
+   - `t` for traceback
+   - `o` for stdout
+   - `l` for logging output
  - In the traceback view, press:
-   - v to toggle the current frame's variable view
- - On the stdout/logging views, page up/down also work, as you would expect
+   - `v` to toggle the current frame's variable view
+ - On the stdout/logging views, `page up`/`page down` also work, as
+   you would expect
 
 
 MOTIVATION
