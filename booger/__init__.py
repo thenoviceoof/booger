@@ -238,7 +238,7 @@ class TracebackVars(Box):
         local_vars = getattr(frame, 'f_locals', None)
         #global_vars = getattr(frame, 'f_globals', None)
         if local_vars:
-            var_lines = ['{0}: {1}'.format(vname, vvalue)
+            var_lines = ['{0}: {1}'.format(vname.ljust(12), vvalue)  # 12 is magic
                          for vname, vvalue in local_vars.iteritems()]
             self.vars.text = '\n'.join(var_lines)
 
