@@ -39,6 +39,7 @@ Commands:
    - `v` to toggle the current frame's variable view
  - On the stdout/logging views, `page up`/`page down` also work, as
    you would expect
+ - `q` quits the current activity, or closes the curses interface
 
 
 MOTIVATION
