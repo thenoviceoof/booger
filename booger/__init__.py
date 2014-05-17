@@ -236,11 +236,23 @@ class TracebackVars(Box):
 
     def display_vars(self, frame):
         local_vars = getattr(frame, 'f_locals', None)
-        #global_vars = getattr(frame, 'f_globals', None)
-        if local_vars:
+        global_vars = getattr(frame, 'f_globals', None)
+        # filter out __special__ vars
+        if global_vars:
+            global_vars = dict([(k,v) for k,v in global_vars.iteritems()
+                                if not k.startswith('__')])
+        text = ''
+        # DRY
+        for name, variables in [('Local Variables', local_vars),
+                                ('Global Variables', global_vars)]:
+            # do we need new lines?
+            if not text.endswith('\n') and text:
+                text += '\n\n'
+            text += '### {0}\n'.format(name)
             var_lines = ['{0}: {1}'.format(vname.ljust(12), vvalue)  # 12 is magic
-                         for vname, vvalue in local_vars.iteritems()]
-            self.vars.text = '\n'.join(var_lines)
+                         for vname, vvalue in variables.iteritems()]
+            text += '\n'.join(var_lines)
+        self.vars.text = text
 
 class TracebackModal(Modal):
     _traceback = None
