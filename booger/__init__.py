@@ -203,8 +203,8 @@ class TracebackModal(Modal):
                 code = ('%d|' % frame.f_lineno).rjust(5)
                 code += f.readlines()[frame.f_lineno-1][:-1].rstrip()
             # windows
-            path_window = TextNoWrap(path)
-            code_window = TextNoWrap(code)
+            path_window = Text(path, style='B')
+            code_window = Text(code)
             line = VerticalPile(path_window, code_window)
             self.frame_windows.add(line)
 
