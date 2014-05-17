@@ -249,9 +249,6 @@ class VerticalPile(Window):
         signal = self.current_window.handle(key)
         return signal
 
-class HorizontalPile(Window):
-    pass
-
 class List(Window):
     windows = []
     current_window = None
