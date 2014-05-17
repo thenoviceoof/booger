@@ -251,7 +251,9 @@ class App(Application):
         finally:
             # be responsive to quits (thread.interrupt_main seems to not work)
             # otherwise, test thread can continue to execute
-            os._exit(1)
+            if not self.tests_done:
+                # use exit code 2 here: 1 is for any failed tests (presumed)
+                os._exit(2)
 
     def handle(self, key):
         result = super(App, self).handle(key)

@@ -22,7 +22,7 @@ def test_test_test_test_test_test_test_test_test_test_test_test_test_test_test()
 def test_test3():
     assert False
 def test_test4():
-    time.sleep(100)
+    time.sleep(1)
     assert False
 
 def test_test5():
