@@ -9,6 +9,7 @@
 ################################################################################
 
 import re
+import os
 import sys
 import nose
 import Queue
@@ -243,6 +244,14 @@ class App(Application):
     def __init__(self, test_queue, *args, **kwargs):
         self.test_queue = test_queue
         super(App, self).__init__(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        try:
+            super(App, self).run(*args, **kwargs)
+        finally:
+            # be responsive to quits (thread.interrupt_main seems to not work)
+            # otherwise, test thread can continue to execute
+            os._exit(1)
 
     def handle(self, key):
         result = super(App, self).handle(key)
