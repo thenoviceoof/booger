@@ -8,7 +8,7 @@ setup(
     packages=['booger'],
     scripts=['bin/booger'],
     url='https://github.com/thenoviceoof/booger',
-    license='Beerware',
+    license='MIT',
     description='Pretty curses-based nose frontend',
     long_description=open('README.md').read(),
     install_requires=[
