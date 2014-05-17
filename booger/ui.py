@@ -438,20 +438,28 @@ class Scrollable(Window):
 class Text(Window):
     text = ''
     style = ''
+    indent = ''
 
-    def __init__(self, text, style=''):
+    def __init__(self, text, style='', indent=''):
         self.text = text
         self.style = style
+        self.indent = indent
 
     def render(self, size):
         text = self.text
         texts = text.split('\n')
         w,h = size
         lines = []
+        newline = True
         while texts and (len(lines) < h if h else True):
-            lines.append(texts[0][:w])
+            if newline:
+                lines.append(texts[0][:w])
+            else:
+                lines.append(self.indent + texts[0][:w - len(self.indent)])
             texts[0] = texts[0][w:]
+            newline = False
             if not texts[0]:
+                newline = True
                 texts.pop(0)
         # pad everything out
         lines = [line + ' ' * (w - len(line)) for line in lines]
