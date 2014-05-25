@@ -468,14 +468,18 @@ class Text(Window):
     text = ''
     style = ''
     indent = ''
+    tab = '    '
 
-    def __init__(self, text, style='', indent=''):
+    def __init__(self, text, style='', indent='', tab=None):
         self.text = text
         self.style = style
         self.indent = indent
+        if tab is not None:
+            self.tab = tab
 
     def render(self, size):
         text = self.text
+        text = text.replace('\t', self.tab)
         texts = text.split('\n')
         w,h = size
         lines = []
@@ -499,13 +503,17 @@ class Text(Window):
 class TextNoWrap(Window):
     text = ''
     style = ''
+    tab = '    '
 
-    def __init__(self, text, style=''):
+    def __init__(self, text, style='', tab=None):
         self.text = text
         self.style = style
+        if tab is not None:
+            self.tab = tab
 
     def render(self, size):
         text = self.text
+        text = text.replace('\t', self.tab)
         texts = text.split('\n')
         w,h = size
         lines = []
@@ -525,10 +533,13 @@ class TextLineNumbers(Window):
     _text = ''
     texts = []
     style = ''
+    tab = '    '
 
-    def __init__(self, text, style=''):
+    def __init__(self, text, style='', tab=None):
         self.text = text
         self.style = style
+        if tab is not None:
+            self.tab = tab
 
     @property
     def text(self):
@@ -537,6 +548,7 @@ class TextLineNumbers(Window):
     @text.setter
     def text(self, text):
         self._text = text
+        text = text.replace('\t', self.tab)
         self.texts = text.split('\n')
 
     def render(self, size):
