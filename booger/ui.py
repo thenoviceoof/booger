@@ -75,10 +75,13 @@ class Application(object):
         curses.curs_set(0)
         assert len(self.colors) <= 4, 'Too many colors defined'
         assert len(self.colors) > 0, 'Not enough colors defined'
+        global ATTRIBUTES
         for i,c in enumerate(self.colors):
             background = getattr(curses, 'COLOR_' + c[0].upper())
             foreground = getattr(curses, 'COLOR_' + c[1].upper())
-            curses.init_pair(i, background, foreground)
+            curses.init_pair(i + 1, background, foreground)
+            ATTRIBUTES[str(i + 1)] = curses.color_pair(i+1)
+            log(ATTRIBUTES)
 
         # wait for a character for only 0.1s
         curses.halfdelay(1)
