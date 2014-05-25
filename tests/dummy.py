@@ -47,6 +47,10 @@ def test():
 def test_test_test_test_test_test_test_test_test_test_test_test_test_test_test():
     assert False
 
+def test_tab():
+    print 'ha\t' * 20
+    assert False
+
 def test_test3():
     assert False
 def test_test4():
