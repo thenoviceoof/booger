@@ -30,11 +30,18 @@ import curses
 import threading
 
 from nose.plugins import Plugin
+from unittest.case import SkipTest
 
 from ui import *
 
 ################################################################################
 # utils
+
+def get_new_test(queue):
+    s, t, e = queue.get(block=False)
+    if e and e[0] is SkipTest:
+        s = 'skip'
+    return (s, t, e)
 
 def get_new_tests(queue):
     '''
@@ -44,7 +51,7 @@ def get_new_tests(queue):
         whether tests are done (True if tests are done)
     '''
     try:
-        s, t, e = queue.get(block=False)
+        s, t, e = get_new_test(queue)
     except Queue.Empty:
         return [], False
     # tests done
@@ -55,7 +62,7 @@ def get_new_tests(queue):
     while 1:
         tests.append((s,t,e))
         try:
-            s, t, e = queue.get(block=False)
+            s, t, e = get_new_test(queue)
         except Queue.Empty:
             return tests, False
         # tests done
@@ -88,6 +95,7 @@ class StatusBar(TextNoWrap):
 
     test_counts = {
         'ok': 0,
+        'skip': 0,
         'fail': 0,
         'error': 0,
     }
@@ -99,7 +107,7 @@ class StatusBar(TextNoWrap):
         else:
             status += [STATUS_BAR_RUNNING]
         status += ['{0}: {1}'.format(x, self.test_counts[x])
-                   for x in ['ok', 'error', 'fail']]
+                   for x in ['ok', 'skip', 'error', 'fail']]
         status_str = ' | '.join(status)
         self.text = status_str
         # render the updated text
@@ -108,6 +116,7 @@ class StatusBar(TextNoWrap):
     def update(self, status):
         test_type = status[0].upper()
         mapping = {
+            'S': 'skip',
             'F': 'fail',
             'E': 'error',
             }
@@ -382,7 +391,7 @@ class App(Application):
             # add new tests
             for status, test, error in tests:
                 self.status.update(status)
-                if status != 'ok':
+                if status not in ('ok', 'skip'):
                     self.tests.add(Test(status, test, error))
             # mark done
             if done:
