@@ -1,3 +1,4 @@
+v0.3.5, 2014/05/25 -- Convert tabs to a set number of spaces in stdout views
 v0.3.4, 2014/05/25 -- Make (v)ariables option visible in traceback view
 v0.3.3, 2014/05/17 -- Switch to MIT license
 v0.3.2, 2014/05/17 -- Update the README
