@@ -30,6 +30,8 @@ import sys
 import time
 import logging
 
+from unittest.case import SkipTest
+
 log = logging.getLogger(__name__)
 
 # test cases
@@ -49,6 +51,10 @@ def test_test_test_test_test_test_test_test_test_test_test_test_test_test_test()
 
 def test_tab():
     print 'ha\t' * 20
+    assert False
+
+def test_skip():
+    raise SkipTest
     assert False
 
 def test_test3():
