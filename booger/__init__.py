@@ -275,7 +275,8 @@ class TracebackModal(Modal):
         self.var_disp = TracebackVars()
         self.split_pane = VerticalPileEqual(self.frame_windows)
         super(TracebackModal, self).__init__(self.split_pane,
-                                             title_parts=['', ''])
+                                             title_parts=['', ''],
+                                             option_parts=[' Variables '])
 
     @property
     def traceback(self):
