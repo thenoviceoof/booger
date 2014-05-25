@@ -110,6 +110,12 @@ class StatusBar(TextNoWrap):
                    for x in ['ok', 'skip', 'error', 'fail']]
         status_str = ' | '.join(status)
         self.text = status_str
+
+        if self.finished:
+            if self.test_counts.get('error') or self.test_counts.get('fail'):
+                self.style = 'B3'
+            else:
+                self.style = 'B2'
         # render the updated text
         return super(StatusBar, self).render(size)
 
@@ -368,6 +374,8 @@ class App(Application):
         }
 
     tests_done = False
+
+    colors = [('black', 'white'), ('black', 'green'), ('black', 'red')]
 
     def __init__(self, test_queue, *args, **kwargs):
         self.test_queue = test_queue
