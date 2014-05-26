@@ -39,11 +39,15 @@ Commands:
 - Move with ``up`` / ``down`` arrow keys, or ``n`` / ``p``
   (next/previous) keys
 - On the main testcase listing, with a selected testcase, press:
+
   * ``t`` for traceback
   * ``o`` for stdout
   * ``l`` for logging output
+
 - In the traceback view, press:
+
   * ``v`` to toggle the current frame's variable view
+
 - On the stdout/logging views, ``page up``/``page down`` also work, as
   you would expect
 - ``q`` quits the current activity, or closes the curses interface
