@@ -10,7 +10,7 @@ setup(
     url='https://github.com/thenoviceoof/booger',
     license='MIT',
     description='Pretty curses-based nose frontend',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     install_requires=[
         'nose',
     ],
