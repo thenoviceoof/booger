@@ -1,3 +1,4 @@
+v0.4.2, 2014/05/26 -- Fix the formatting of the nested lists
 v0.4.1, 2014/05/26 -- Convert README format from markdown to reStructuredText
 v0.4.0, 2014/05/25 -- Show test run is done by changing color of status bar
 v0.3.6, 2014/05/25 -- Handle skips like test passes
