@@ -10,9 +10,12 @@ SCREENSHOTS
 
 .. image:: https://raw.githubusercontent.com/thenoviceoof/booger/docs/docs/page1.png
    :alt: Booger main listing
+   :title: Booger main listing
 
 .. image:: https://raw.githubusercontent.com/thenoviceoof/booger/docs/docs/page2.png
    :alt: Booger variable view
+   :title: Booger variable view
+
 
 INSTALLATION
 ------------
