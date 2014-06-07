@@ -81,7 +81,6 @@ class Application(object):
             foreground = getattr(curses, 'COLOR_' + c[1].upper())
             curses.init_pair(i + 1, background, foreground)
             ATTRIBUTES[str(i + 1)] = curses.color_pair(i+1)
-            log(ATTRIBUTES)
 
         # wait for a character for only 0.1s
         curses.halfdelay(1)
