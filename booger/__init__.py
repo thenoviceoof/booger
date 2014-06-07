@@ -277,8 +277,14 @@ class TracebackVars(Box):
             if not text.endswith('\n') and text:
                 text += '\n\n'
             text += '### {0}\n'.format(name)
-            var_lines = ['{0}: {1}'.format(vname.ljust(12), vvalue)  # 12 is magic
-                         for vname, vvalue in variables.iteritems()]
+            var_lines = []
+            for vname, vvalue in variables.iteritems():
+                vname = vname.ljust(12)  # 12 is magic
+                try:
+                    vvalue = repr(vvalue)
+                except Exception as e:
+                    vvalue = '<__repr__ raised Exception: %s>' % str(e)
+                var_lines.append('{0}: {1}'.format(vname, vvalue))
             text += '\n'.join(var_lines)
         self.vars.text = text
 
