@@ -1,3 +1,4 @@
+v0.4.5, 2014/06/07 -- Prevent __repr__ from crashing the main process
 v0.4.4, 2014/06/07 -- Don't write logging output unasked
 v0.4.3, 2014/05/27 -- Prevent pip crashes by using proper extension for README
 v0.4.2, 2014/05/26 -- Fix the formatting of the nested lists
