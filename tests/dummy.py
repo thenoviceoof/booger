@@ -49,6 +49,13 @@ def test():
 def test_test_test_test_test_test_test_test_test_test_test_test_test_test_test():
     assert False
 
+def test_bad_repr():
+    class BadStr(object):
+        def __repr__(self):
+            aoeu
+    variable = BadStr()
+    assert False
+
 def test_tab():
     print 'ha\t' * 20
     assert False
